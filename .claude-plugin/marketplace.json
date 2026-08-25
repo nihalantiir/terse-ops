@@ -1,0 +1,18 @@
+{
+  "name": "terse-ops",
+  "owner": {
+    "name": "Nihalantiir"
+  },
+  "metadata": {
+    "description": "Concise Claude Code ops: short output, orchestrator role, damage harness, fail-fast.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "terse-ops",
+      "source": "./plugins/terse-ops",
+      "description": "Concise output, high-level orchestration, safe auto mode, fail-fast reporting.",
+      "version": "0.1.0"
+    }
+  ]
+}

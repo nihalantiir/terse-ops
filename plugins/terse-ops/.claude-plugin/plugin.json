@@ -1,0 +1,10 @@
+{
+  "name": "terse-ops",
+  "version": "0.1.0",
+  "description": "Concise output, orchestrator role, damage harness, fail-fast.",
+  "author": {
+    "name": "Nihalantiir"
+  },
+  "license": "MIT",
+  "keywords": ["concise", "orchestrator", "safety", "auto-mode", "claude-code"]
+}
