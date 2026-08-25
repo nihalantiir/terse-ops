@@ -6,12 +6,12 @@ The orchestrator (your top-tier model) plans, delegates, and verifies. Cheaper s
 
 ## Install
 
-Need the CLI first: `npm install -g @anthropic-ai/claude-code`. Already have it: `claude update` keeps it current.
-
 ```
 /plugin marketplace add Nihalantiir/terse-ops
 /plugin install terse-ops@terse-ops
 ```
+
+To update later (CLI or the claude.ai/code web app — same commands in both): `/plugin marketplace update terse-ops` then `/plugin install terse-ops@terse-ops`. See the [marketplace README](../../README.md#updating) for the full flow.
 
 ## Skills
 

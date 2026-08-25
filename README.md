@@ -6,26 +6,25 @@ The top model plans, delegates, and verifies. Cheaper models do the mechanical l
 
 Not related to TERSE state language, TerseAI workflows, or be-terse hooks — this is an original ops style: concise output, orchestrator role, and safety rules, packaged as a Claude Code plugin.
 
-## Getting Claude Code
-
-Don't have the CLI yet:
-
-```
-npm install -g @anthropic-ai/claude-code
-```
-
-Already have it — keep it current (do this before filing a bug, plugin/skill behavior changes fast):
-
-```
-claude update
-```
-
 ## Install
 
 ```
 /plugin marketplace add Nihalantiir/terse-ops
 /plugin install terse-ops@terse-ops
 ```
+
+## Updating
+
+Same slash commands in both the CLI and the Claude web app (claude.ai/code):
+
+```
+/plugin marketplace update terse-ops
+/plugin install terse-ops@terse-ops
+```
+
+The first refreshes the marketplace listing from this repo; the second pulls the plugin up to whatever version that listing now points to. If the result says `Run /reload-plugins to activate`, run that too — otherwise no restart is needed.
+
+In the web app, the same actions live under `/plugin` → **Marketplaces** tab (update listings, or enable auto-update) and **Installed** tab (update the plugin) — there's no separate button outside that slash-command UI.
 
 ## What's in it
 
