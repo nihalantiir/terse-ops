@@ -1,0 +1,22 @@
+name: Plugin eval
+
+# `claude plugin eval` is early-access and gated per organization (see
+# plugins/terse-ops/evals/README.md). This workflow is manual-trigger only —
+# not wired to push/PR — so it never runs unattended cost against a gated,
+# still-evolving feature.
+on:
+  workflow_dispatch:
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/setup-claude-code@v1
+      - run: claude plugin eval ./plugins/terse-ops --json eval-results.json --threshold 0.9 --max-cost-usd 10
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: plugins/terse-ops/evals/results/*/report.html

@@ -4,15 +4,15 @@
     "name": "Nihalantiir"
   },
   "metadata": {
-    "description": "Concise Claude Code ops: short output, cost-aware model-tier orchestration, hook-enforced damage harness, fail-fast reporting.",
-    "version": "0.1.0"
+    "description": "Concise Claude Code ops: short output, cost-aware model-tier orchestration, hook-enforced damage harness, fail-fast reporting, verified research.",
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "terse-ops",
       "source": "./plugins/terse-ops",
-      "description": "Concise output, cost-aware orchestration across model tiers, hook-enforced damage harness, fail-fast reporting.",
-      "version": "0.1.0"
+      "description": "Concise output, cost-aware orchestration across model tiers, hook-enforced damage harness, fail-fast reporting, verified research.",
+      "version": "0.2.0"
     }
   ]
 }

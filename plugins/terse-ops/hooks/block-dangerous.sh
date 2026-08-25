@@ -36,6 +36,35 @@ case "$cmd" in
     deny "terse-ops harness: git reset --hard is blocked. It discards uncommitted work — stash first or confirm with the user." ;;
 esac
 
+case "$cmd" in
+  *git\ *push*--delete*)
+    deny "terse-ops harness: git push --delete is blocked. Deleting a remote branch/tag is hard to reverse — confirm with the user and have them run it." ;;
+esac
+
+# branch -D is a force-delete that skips the merged check; -d (lowercase) is
+# safe and left alone. Flags can combine (-Df, -fD) so check tokens, not a
+# fixed string.
+branch_segment="$(printf '%s' "$cmd" | grep -oE '(^|[;&|[:space:]])branch([[:space:]][^;&|]*|$)' | head -1)"
+if [ -n "$branch_segment" ]; then
+  for tok in $branch_segment; do
+    case "$tok" in
+      -*) case "$tok" in *D*) deny "terse-ops harness: git branch -D is blocked. It force-deletes an unmerged branch — confirm with the user or use -d on a merged branch." ;; esac ;;
+    esac
+  done
+fi
+
+# clean -f/-x can delete untracked (and ignored, with -x) files with no
+# undo. Flags combine (-fd, -fdx) so check tokens, same approach as rm -rf.
+clean_segment="$(printf '%s' "$cmd" | grep -oE '(^|[;&|[:space:]])clean([[:space:]][^;&|]*|$)' | head -1)"
+if [ -n "$clean_segment" ]; then
+  for tok in $clean_segment; do
+    case "$tok" in
+      --force) deny "terse-ops harness: git clean -f is blocked. It permanently deletes untracked files — confirm with the user first." ;;
+      -*) case "$tok" in *f*) deny "terse-ops harness: git clean -f is blocked. It permanently deletes untracked files — confirm with the user first." ;; esac ;;
+    esac
+  done
+fi
+
 # Recursive + force can arrive combined (-rf), reversed (-fr), long-form
 # (--recursive --force), or as separate short flags (-r -f) in either order —
 # check the segment from "rm" to the next control operator token by token
