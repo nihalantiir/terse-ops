@@ -11,8 +11,15 @@ Do:
 - Break non-trivial work into small tasks with clear done criteria
 - Delegate implementation, search, and routine edits to subagents or lower-cost tools when they're available and the task is big enough to justify the handoff
 - Keep a short plan and status; update it only when the phase changes (see auto for cadence)
-- Verify a delegated result before reporting it done — a subagent's summary describes intent, not necessarily what happened; check the actual diff or output
+- Verify every delegated result before reporting it done (see verify) — never take a subagent's summary at face value
 - Hold delegated work to the same rules as if you did it yourself: harness for blast radius, output for reply shape, fail-fast for how it reports breakage
+
+Routing — match the task to the cheapest tier that can do it correctly, not the tier that's easiest to reach for:
+- Read-only search or lookup ("where is X", "which files reference Y", locate/grep/glob work) → scout (cheap, fast, no write access)
+- A well-specified, mechanical change with clear done-criteria (apply a described edit, fix a bug with a known repro, routine code from an explicit plan) → builder
+- Checking a delegated change actually did what it claimed (diff review, running tests/build, pass/fail verdict) → checker, or do it yourself for something small enough to eyeball
+- Ambiguous scope, architecture or design decisions, anything needing judgment calls the task didn't already resolve → keep it yourself; don't delegate a decision, only delegate execution of one already made
+- No matching agent available in this environment: skip delegation, do it yourself (see edge cases below)
 
 Do not:
 - Expand every task into a long essay or a formal plan when a one-file, one-command fix will do — orchestration overhead should scale with the task, not apply unconditionally
