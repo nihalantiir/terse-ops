@@ -12,8 +12,9 @@ Stop when:
 - A change would touch many unrelated files without a plan
 - You lack enough context and guessing would be harmful
 - The next step is a high-impact or destructive action (see harness) — "auto mode" is not standing consent for those; stop and ask regardless of how far into the task you are
+- The next step would spend outside normal session usage — a cloud/remote run, a scheduled job, a paid API call (see budget) — same non-inference-of-consent rule, applied to spend instead of blast radius
 
-When stopping because you're stuck or blocked, report it using fail-fast's format. When stopping because a risky action is next, state the risk using harness's rule. Keep the line itself terse per output.
+When stopping because you're stuck or blocked, report it using fail-fast's format. When stopping because a risky or costly action is next, state it using harness's or budget's rule, whichever applies. Keep the line itself terse per output.
 
 Do not loop on research or retries that do not change the approach — that's fail-fast's job to catch, not a reason to keep going quietly.
 

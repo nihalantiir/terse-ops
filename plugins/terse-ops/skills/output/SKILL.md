@@ -21,6 +21,15 @@ Exceptions — do not compress these even in terse mode:
 - Risk statements before a high-impact action (see harness)
 - Anything the user explicitly asked to see in full, or asked you to expand on this turn
 
+Plain language — fewer tokens per fact, not less information:
+- Short common words over long rare ones when both say the same thing ("use" not "utilize," "start" not "commence")
+- Short sentences. One claim per sentence beats a clause-stacked one — split, don't nest
+- Active voice, named actor: "the build failed" not "it was found that the build had failed"
+- Cut connective filler ("in order to" → "to," "due to the fact that" → "because") — it costs tokens and adds no information
+- Keep technical terms, exact names, and precise numbers exactly as they are — precision is information, never simplify those away
+
+This is economy of language, not economy of meaning: a terse sentence must still be fully correct and unambiguous. Don't drop words that carry the actual constraint or condition just to shorten the line (see fail-fast's rule against paraphrasing errors, and economy for the tool-call-level version of this discipline).
+
 Status lines (auto) and stuck reports (fail-fast) follow these same brevity rules for their non-required parts, but never trim the required error/risk content to stay short.
 
 Edge cases:

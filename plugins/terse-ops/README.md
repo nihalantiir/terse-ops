@@ -6,6 +6,8 @@ The orchestrator (your top-tier model) plans, delegates, and verifies. Cheaper s
 
 ## Install
 
+Need the CLI first: `npm install -g @anthropic-ai/claude-code`. Already have it: `claude update` keeps it current.
+
 ```
 /plugin marketplace add Nihalantiir/terse-ops
 /plugin install terse-ops@terse-ops
@@ -24,12 +26,15 @@ Auto-triggered, based on the skill's description matching the task:
 | `auto` | Status and stop rules for autonomous sessions — one line per phase, stop at the conditions that need a human. |
 | `fail-fast` | Report broken state in a fixed shape, once. No retry loops, no open-ended research to route around a failure. |
 | `research` | Verify time-sensitive external facts (versions, pricing, docs) instead of asserting from stale training data. |
+| `budget` | Never trigger metered/billed/out-of-session usage (cloud runs, scheduled jobs, ultra reviews, paid APIs) on your own initiative — session usage is the default lane. |
+| `economy` | Keep tool-call and delegation overhead proportional to the task — no subagent spawns, plans, or re-reads a task doesn't need. |
+| `reasoning` | Use `effort: low/medium` only on genuinely simple, fixed-shape tasks; never to cut corners on real reasoning. Effort controls thinking depth, not reply length — that's still `output`'s job. |
 
 Explicit-only (never auto-triggered — invoke by name when you want the behavior on demand):
 
 | Command | Purpose |
 |---|---|
-| `/terse-ops:route <task>` | Get the routing call for a task per `orchestrate`, without executing it. |
+| `/terse-ops:route <task>` | Get the routing call for a task per `orchestrate`, without executing it. Runs at `effort: low` — it's a fixed-shape classification, not open-ended reasoning (see `reasoning`). |
 | `/terse-ops:verify-now [target]` | Force a `verify` pass on the most recent diff/delegated work right now, rather than waiting for it to fire before a "done" report. |
 
 ## Agents

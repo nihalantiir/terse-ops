@@ -4,6 +4,7 @@ description: Decide which terse-ops tier should handle a task, per orchestrate's
 disable-model-invocation: true
 argument-hint: [task description]
 arguments: [task]
+effort: low
 ---
 
 Apply orchestrate's routing rules to this task: $task
