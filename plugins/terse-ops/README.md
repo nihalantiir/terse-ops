@@ -41,7 +41,7 @@ On-demand — not auto-triggered (excluded from the ambient skill listing entire
 ## Known limitations
 
 - **`mode`/`status` are skill-enforced, not hook-backed.** `/terse-ops:mode` and `/terse-ops:status` work by asking the model to track state in the conversation and follow the matching skill's instructions — unlike `harness`, there's no `PreToolUse`/`SessionStart` hook or file behind them. Deliberate: durable state would mean writing and cleaning up session files. The trade-off is that the model's own adherence is the only enforcement.
-- **No durable state store.** Because mode and phase live in the conversation rather than a file, a very long session or a context compaction can lose track of the current mode and drift back to the `clean` default, or misreport a phase in `/terse-ops:status`. Accepted for a stateless, install-and-go plugin — re-run `/terse-ops:mode` after a compaction if it matters, rather than assuming it held.
+- **No durable state store, with one deliberate exception.** Because mode and phase live in the conversation rather than a file, a very long session or a context compaction can lose track of the current mode and drift back to the `clean` default, or misreport a phase in `/terse-ops:status`. Accepted for a stateless, install-and-go plugin — re-run `/terse-ops:mode` after a compaction if it matters, rather than assuming it held. The one exception is the standing-allow file behind `/terse-ops:allow` — that's security-enforcement state, not conversational bookkeeping, so it's durable and file-backed on purpose, scoped to one repo, not global.
 - **Opt-in skills need a standing nudge to act "always on."** The six skills above only take effect once invoked per session. To make one always-on for a project without editing the plugin, add the matching `/terse-ops:<name>` command to that project's `CLAUDE.md` — Claude reads and follows it every session. To make it always-on everywhere instead, drop `disable-model-invocation: true` from that skill's frontmatter (same lever 0.7.0 used to thin the set down).
 
 Commands (all explicit-invoke-only, all six above included):
@@ -53,6 +53,7 @@ Commands (all explicit-invoke-only, all six above included):
 | `/terse-ops:status` | Report current phase, output mode, anything the harness hook has blocked this session, and open items — read from the conversation itself, no separate state store. |
 | `/terse-ops:mode <clean\|tight\|grunt>` | Set the output compression level for the rest of the session (see `output`). Default is `clean`. |
 | `/terse-ops:solo` | Turn off delegation for the rest of the session — do everything directly instead of routing to subagents. |
+| `/terse-ops:allow <category>` | Grant a standing, per-repo allow for one hook block-list category, so it stops needing a fresh one-shot marker every time in this repo. `/terse-ops:allow list`/`revoke <category\|all>` to inspect or undo. |
 
 ## Agents
 
@@ -83,7 +84,9 @@ A `PreToolUse` hook backs the hard rules in `harness` with an actual block, not 
 - a raw `DROP TABLE` — overridable
 - `--no-verify` / `--no-gpg-sign` — **not** overridable, ever; bypassing signing/hooks is a different category from "delete this on purpose"
 
-"Overridable" means: prefix the single command with `TERSE_OPS_DANGER_OK=1` when the user explicitly asked, this turn, for exactly that action — not "auto mode," not a standing approval, not inferred from context (see `harness`). Scoped to that one command; a later dangerous command needs its own fresh ask.
+"Overridable" means one of two things: prefix the single command with `TERSE_OPS_DANGER_OK=1` (or `TERSE_OPS_COMMIT_OK=1` for a commit) when the user explicitly asked, this turn, for exactly that action — not "auto mode," not a standing approval, not inferred from context (see `harness`); scoped to that one command, a later dangerous command needs its own fresh ask. Or, run `/terse-ops:allow <category>` once to grant a standing, per-repo allow for that category, so it stops needing a fresh marker every time in this repo — set up only via that command, never inferred, and revocable with `/terse-ops:allow revoke <category>`. `--no-verify`/`--no-gpg-sign` has no path through either mechanism, ever.
+
+The standing-allow file lives at `.claude/terse-ops-allow.local.txt` in the repo root (one category per line), and isn't committed by default — `/terse-ops:allow` warns if your `.gitignore` doesn't already cover `.claude/`.
 
 Shipped as two hook entries so the block still runs without Git Bash/WSL: `block-dangerous.sh` (POSIX `sh`, no bashisms) and `block-dangerous.ps1` (Windows `powershell.exe`, which ships with every Windows install). Both run on every Bash call; whichever interpreter exists on the machine does the blocking — the other fails to launch and is a silent no-op, which is expected, not a bug.
 

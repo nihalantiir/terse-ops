@@ -10,22 +10,61 @@ $Hook = Join-Path $PSScriptRoot "..\hooks\block-dangerous.ps1"
 $pass = 0
 $fail = 0
 
-function Invoke-Case {
-    param([string]$Expect, [string]$Desc, [string]$Cmd)
-
-    $payload = (@{ tool_input = @{ command = $Cmd } } | ConvertTo-Json -Compress)
-    $out = $payload | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Hook 2>&1
-    $code = $LASTEXITCODE
-
-    $ok = if ($Expect -eq 'BLOCK') { $code -eq 2 } else { $code -eq 0 }
+function Record-Result {
+    param([string]$Expect, [string]$Desc, [string]$Cmd, [int]$Code, [string]$Out)
+    $ok = if ($Expect -eq 'BLOCK') { $Code -eq 2 } else { $Code -eq 0 }
     if ($ok) {
         $script:pass++
     } else {
         $script:fail++
-        Write-Host "FAIL [expected $Expect, got exit $code]: $Desc"
+        Write-Host "FAIL [expected $Expect, got exit $Code]: $Desc"
         Write-Host "  cmd: $Cmd"
-        if ($Expect -eq 'ALLOW') { Write-Host "  output: $out" }
+        if ($Expect -eq 'ALLOW') { Write-Host "  output: $Out" }
     }
+}
+
+function Invoke-Case {
+    param([string]$Expect, [string]$Desc, [string]$Cmd)
+    $payload = (@{ tool_input = @{ command = $Cmd } } | ConvertTo-Json -Compress)
+    $out = $payload | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Hook 2>&1
+    Record-Result $Expect $Desc $Cmd $LASTEXITCODE ($out -join "`n")
+}
+
+# Scaffolds a throwaway repo dir (a bare .git marker, no real `git init`
+# needed -- the hook only checks .git's existence), optionally writes a
+# standing-allow file, invokes the hook with cwd set inside it (optionally a
+# nested subdir, to prove the walk-up-to-root logic), then cleans up.
+function Invoke-CaseInRepo {
+    param(
+        [string]$Expect,
+        [string]$Desc,
+        [string]$Cmd,
+        [string]$AllowContents = '',
+        [string]$Subdir = '',
+        [bool]$NoGit = $false
+    )
+    $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
+    New-Item -ItemType Directory -Path $tmp | Out-Null
+    if (-not $NoGit) { New-Item -ItemType Directory -Path (Join-Path $tmp '.git') | Out-Null }
+    if ($AllowContents -ne '') {
+        $claudeDir = Join-Path $tmp '.claude'
+        New-Item -ItemType Directory -Path $claudeDir | Out-Null
+        Set-Content -Path (Join-Path $claudeDir 'terse-ops-allow.local.txt') -Value $AllowContents
+    }
+    $invokeDir = $tmp
+    if ($Subdir -ne '') {
+        $invokeDir = Join-Path $tmp $Subdir
+        New-Item -ItemType Directory -Path $invokeDir -Force | Out-Null
+    }
+
+    $payload = (@{ tool_input = @{ command = $Cmd } } | ConvertTo-Json -Compress)
+    Push-Location $invokeDir
+    $out = $payload | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Hook 2>&1
+    $code = $LASTEXITCODE
+    Pop-Location
+    Remove-Item -Recurse -Force $tmp
+
+    Record-Result $Expect $Desc $Cmd $code ($out -join "`n")
 }
 
 # --- blocked: the hard "never" list ---
@@ -52,7 +91,7 @@ Invoke-Case BLOCK "kubectl delete pod --all-namespaces" 'kubectl delete pod --al
 Invoke-Case BLOCK "DROP TABLE uppercase"                'psql -c "DROP TABLE users"'
 Invoke-Case BLOCK "drop table lowercase"                'psql -c "drop table users"'
 Invoke-Case BLOCK "--no-verify"                         'git commit -m "x" --no-verify'
-Invoke-Case BLOCK "--no-gpg-sign"                       'git commit -m "x" --no-gpg-sign'
+Invoke-Case BLOCK "--no-gpg-sign"                        'git commit -m "x" --no-gpg-sign'
 
 # --- allowed: known false-positive traps the harness must not trip on ---
 Invoke-Case ALLOW "plain git log"                       'git log'
@@ -65,11 +104,42 @@ Invoke-Case ALLOW "kubectl delete pods plural"          'kubectl delete pods myp
 Invoke-Case ALLOW "branch -d lowercase, merged"         'git branch -d merged-feature'
 Invoke-Case ALLOW "plain git status"                    'git status'
 
-# --- overrides: the scoped bypass works, and the two absolute blocks refuse it ---
+# --- one-shot overrides: the marker works, and the two absolute blocks refuse it ---
 Invoke-Case ALLOW "danger-ok overrides force-push"      'TERSE_OPS_DANGER_OK=1 git push --force origin main'
 Invoke-Case ALLOW "commit-ok overrides commit"          'TERSE_OPS_COMMIT_OK=1 git commit -m "wip"'
 Invoke-Case ALLOW "danger-ok also overrides commit"     'TERSE_OPS_DANGER_OK=1 git commit -m "wip"'
 Invoke-Case BLOCK "no override defeats --no-verify"     'TERSE_OPS_DANGER_OK=1 git commit -m "x" --no-verify'
+
+# --- standing per-repo allow (/terse-ops:allow): durable, category-scoped, revocable ---
+Invoke-CaseInRepo ALLOW "standing allow: commit granted" 'git commit -m "wip"' -AllowContents 'commit'
+Invoke-CaseInRepo ALLOW "standing allow: force-push granted" 'git push --force origin main' -AllowContents 'force-push'
+Invoke-CaseInRepo BLOCK "standing allow: category scoping (commit-only doesn't cover force-push)" 'git push --force origin main' -AllowContents 'commit'
+Invoke-CaseInRepo BLOCK "standing allow: --no-verify still absolute" 'git commit -m "x" --no-verify' -AllowContents 'commit'
+Invoke-CaseInRepo BLOCK "standing allow: empty/comment-only file grants nothing" 'git commit -m "wip"' -AllowContents '# nothing granted yet'
+Invoke-CaseInRepo BLOCK "standing allow: file with no .git above it is inert" 'git commit -m "wip"' -AllowContents 'commit' -NoGit $true
+Invoke-CaseInRepo ALLOW "standing allow: walk-up finds root from nested subdir" 'git commit -m "wip"' -AllowContents 'commit' -Subdir 'a\b\c'
+
+# Revoke: grant, confirm allowed, then remove the file in the same repo dir
+# and confirm the block comes back -- proves revoke actually restores
+# default behavior, not just that an unrelated fresh repo blocks by default.
+$tmp = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
+New-Item -ItemType Directory -Path $tmp | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $tmp '.git') | Out-Null
+$claudeDir = Join-Path $tmp '.claude'
+New-Item -ItemType Directory -Path $claudeDir | Out-Null
+$allowFile = Join-Path $claudeDir 'terse-ops-allow.local.txt'
+Set-Content -Path $allowFile -Value 'commit'
+$payload = (@{ tool_input = @{ command = 'git commit -m "wip"' } } | ConvertTo-Json -Compress)
+Push-Location $tmp
+$out = $payload | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Hook 2>&1
+Record-Result ALLOW "standing allow: granted before revoke" 'git commit -m "wip"' $LASTEXITCODE ($out -join "`n")
+Pop-Location
+Remove-Item -Force $allowFile
+Push-Location $tmp
+$out = $payload | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Hook 2>&1
+Record-Result BLOCK "standing allow: revoke restores the block" 'git commit -m "wip"' $LASTEXITCODE ($out -join "`n")
+Pop-Location
+Remove-Item -Recurse -Force $tmp
 
 Write-Host ""
 Write-Host "$pass passed, $fail failed"

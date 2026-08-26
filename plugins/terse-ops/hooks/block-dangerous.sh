@@ -21,18 +21,59 @@ deny() {
   exit 2
 }
 
+# Nearest ancestor directory containing a .git entry, starting from this
+# process's own working directory. No `git` subprocess here -- this runs on
+# every Bash call, and an existence check is enough to answer "is there a
+# repo root to look for a standing allow in." Prints the root and returns 0,
+# or returns 1 if none was found (e.g. not inside a repo at all).
+find_repo_root() {
+  dir="$(pwd)"
+  while :; do
+    [ -e "$dir/.git" ] && { printf '%s' "$dir"; return 0; }
+    [ "$dir" = "/" ] && return 1
+    parent="$(dirname "$dir")"
+    [ "$parent" = "$dir" ] && return 1
+    dir="$parent"
+  done
+}
+
+# Standing, per-repo allow for one category of the block list below. Set up
+# only via `/terse-ops:allow <category>`, never inferred by the model -- same
+# non-inference rule as the one-shot marker, just durable instead of
+# one-command-scoped (see harness). File is one category slug per line,
+# blank lines and #-comments ignored. Never consulted for the
+# --no-verify/--no-gpg-sign check further down -- that stays a bare deny(),
+# on purpose, see the comment on that check.
+category_allowed() {
+  category="$1"
+  root="$(find_repo_root)" || return 1
+  allow_file="$root/.claude/terse-ops-allow.local.txt"
+  [ -f "$allow_file" ] || return 1
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      ''|'#'*) continue ;;
+    esac
+    [ "$line" = "$category" ] && return 0
+  done < "$allow_file"
+  return 1
+}
+
 # Explicit, scoped bypass for the destructive/hard-to-reverse checks below --
 # not for --no-verify/--no-gpg-sign, which stays absolute (bypassing
 # signing/hooks is a different category from "delete this on purpose", see
-# harness). Signals the user explicitly asked, this turn, for exactly this
-# action. Scoped to the one command it's prefixed on, not a standing setting
-# -- reused on a later command without a fresh ask is a harness violation,
-# same as the commit-specific marker it sits alongside.
+# harness). Two ways through: the one-shot marker (signals the user
+# explicitly asked, this turn, for exactly this action -- scoped to the one
+# command it's prefixed on, not a standing setting) or a standing per-repo
+# allow for this category (see category_allowed above). Checked in that
+# order so the common, marker-only path pays no extra file I/O.
 overridable_deny() {
+  msg="$1"
+  category="$2"
   case "$seg" in
-    *TERSE_OPS_DANGER_OK=1*) : ;;
-    *) deny "$1" ;;
+    *TERSE_OPS_DANGER_OK=1*) return 0 ;;
   esac
+  category_allowed "$category" && return 0
+  deny "$msg Or run \`/terse-ops:allow $category\` so this repo stops asking every time (see harness)."
 }
 
 # Every check below runs per-segment, not against the whole raw command
@@ -51,9 +92,10 @@ segments="$(printf '%s' "$cmd" | tr ';&|' '\n\n\n')"
 check_segment() {
   seg="$1"
 
-  # Default is never commit on the user's behalf. Exception: the user just
-  # explicitly asked, this turn, for the commit itself -- signaled by
-  # prefixing the single command with TERSE_OPS_COMMIT_OK=1 (see harness).
+  # Default is never commit on the user's behalf. Two ways through: the
+  # one-shot marker (the user just explicitly asked, this turn, for the
+  # commit itself) or a standing per-repo allow for "commit" (see
+  # category_allowed above, set up only via /terse-ops:allow commit).
   is_commit_cmd=0
   case "$seg" in
     *git\ *commit*|*git\ *cherry-pick*--continue*) is_commit_cmd=1 ;;
@@ -61,15 +103,22 @@ check_segment() {
   if [ "$is_commit_cmd" = 1 ]; then
     case "$seg" in
       *TERSE_OPS_COMMIT_OK=1*|*TERSE_OPS_DANGER_OK=1*) : ;;
-      *) deny "terse-ops harness: git commit is blocked. Default rule is never commit on the user's behalf — stage the change and ask them to commit it. If they just explicitly asked you to commit it yourself this turn, prefix the command with TERSE_OPS_COMMIT_OK=1 (see harness) — don't reuse that prefix on a later commit without asking again." ;;
+      *)
+        category_allowed commit || deny "terse-ops harness: git commit is blocked. Default rule is never commit on the user's behalf — stage the change and ask them to commit it. If they just explicitly asked you to commit it yourself this turn, prefix the command with TERSE_OPS_COMMIT_OK=1 (see harness) — don't reuse that prefix on a later commit without asking again. Or run \`/terse-ops:allow commit\` so this repo stops asking every time."
+        ;;
     esac
   fi
 
   case "$seg" in
     *git\ *push*--force*|*git\ *push*\ -f\ *|*git\ *push*\ -f)
-      overridable_deny "terse-ops harness: force-push is blocked. Confirm with the user and have them run it, or get explicit sign-off first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." ;;
+      overridable_deny "terse-ops harness: force-push is blocked. Confirm with the user and have them run it, or get explicit sign-off first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." force-push ;;
   esac
 
+  # --no-verify/--no-gpg-sign has NO override, ever -- not the one-shot
+  # marker, not a standing allow, no exceptions. Bypassing signing or hooks
+  # corrupts an audit trail, a different failure mode than "the user wants
+  # this data gone on purpose." DO NOT wire a category_allowed check into
+  # this branch, on a future hand-sync edit or otherwise -- see harness.
   case "$seg" in
     *--no-verify*|*--no-gpg-sign*)
       deny "terse-ops harness: --no-verify/--no-gpg-sign is blocked. Do not bypass hooks or signing to force a command through. This one has no override — it's a different category from a destructive-on-purpose action." ;;
@@ -77,17 +126,17 @@ check_segment() {
 
   case "$seg" in
     *reset\ *--hard*)
-      overridable_deny "terse-ops harness: git reset --hard is blocked. It discards uncommitted work — stash first or confirm with the user — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." ;;
+      overridable_deny "terse-ops harness: git reset --hard is blocked. It discards uncommitted work — stash first or confirm with the user — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." reset-hard ;;
   esac
 
   case "$seg" in
     *git\ *push*--delete*)
-      overridable_deny "terse-ops harness: git push --delete is blocked. Deleting a remote branch/tag is hard to reverse — confirm with the user and have them run it — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." ;;
+      overridable_deny "terse-ops harness: git push --delete is blocked. Deleting a remote branch/tag is hard to reverse — confirm with the user and have them run it — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." push-delete ;;
   esac
 
   case "$seg" in
     *terraform*destroy*)
-      overridable_deny "terse-ops harness: terraform destroy is blocked. It tears down provisioned infrastructure — confirm with the user and have them run it — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." ;;
+      overridable_deny "terse-ops harness: terraform destroy is blocked. It tears down provisioned infrastructure — confirm with the user and have them run it — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." terraform-destroy ;;
   esac
 
   # kubectl delete pod/pods is routine -- a controller reschedules it, so
@@ -115,10 +164,10 @@ check_segment() {
         case "$resource" in
           pod|pods|po)
             if [ "$cluster_wide" = 1 ]; then
-              overridable_deny "terse-ops harness: kubectl delete pod --all-namespaces is blocked. That's cluster-wide, not a routine single-pod restart — confirm with the user first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)."
+              overridable_deny "terse-ops harness: kubectl delete pod --all-namespaces is blocked. That's cluster-wide, not a routine single-pod restart — confirm with the user first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." kubectl-delete
             fi ;;
           *)
-            overridable_deny "terse-ops harness: kubectl delete is blocked (resource: ${resource:-unspecified}). Deleting anything other than a pod isn't self-healing under a controller and can be destructive or hard to reverse — confirm with the user, or scope to a read-only check first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." ;;
+            overridable_deny "terse-ops harness: kubectl delete is blocked (resource: ${resource:-unspecified}). Deleting anything other than a pod isn't self-healing under a controller and can be destructive or hard to reverse — confirm with the user, or scope to a read-only check first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." kubectl-delete ;;
         esac
       fi
       ;;
@@ -128,7 +177,7 @@ check_segment() {
   lc_seg="$(printf '%s' "$seg" | tr '[:upper:]' '[:lower:]')"
   case "$lc_seg" in
     *drop\ table*)
-      overridable_deny "terse-ops harness: a raw DROP TABLE is blocked. Dropping a table is destructive and usually irreversible — confirm with the user before running it — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." ;;
+      overridable_deny "terse-ops harness: a raw DROP TABLE is blocked. Dropping a table is destructive and usually irreversible — confirm with the user before running it — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." drop-table ;;
   esac
 
   # branch -D is a force-delete that skips the merged check; -d (lowercase)
@@ -141,7 +190,7 @@ check_segment() {
     *branch*)
       for tok in $seg; do
         case "$tok" in
-          -[!-]*) case "$tok" in *D*) overridable_deny "terse-ops harness: git branch -D is blocked. It force-deletes an unmerged branch — confirm with the user or use -d on a merged branch — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." ;; esac ;;
+          -[!-]*) case "$tok" in *D*) overridable_deny "terse-ops harness: git branch -D is blocked. It force-deletes an unmerged branch — confirm with the user or use -d on a merged branch — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." branch-delete ;; esac ;;
         esac
       done
       ;;
@@ -156,8 +205,8 @@ check_segment() {
     *clean*)
       for tok in $seg; do
         case "$tok" in
-          --force) overridable_deny "terse-ops harness: git clean -f is blocked. It permanently deletes untracked files — confirm with the user first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." ;;
-          -[!-]*) case "$tok" in *f*) overridable_deny "terse-ops harness: git clean -f is blocked. It permanently deletes untracked files — confirm with the user first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." ;; esac ;;
+          --force) overridable_deny "terse-ops harness: git clean -f is blocked. It permanently deletes untracked files — confirm with the user first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." clean-force ;;
+          -[!-]*) case "$tok" in *f*) overridable_deny "terse-ops harness: git clean -f is blocked. It permanently deletes untracked files — confirm with the user first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." clean-force ;; esac ;;
         esac
       done
       ;;
@@ -185,7 +234,7 @@ check_segment() {
         esac
       done
       if [ "$has_r" = 1 ] && [ "$has_f" = 1 ]; then
-        overridable_deny "terse-ops harness: rm -rf is blocked. Delete narrowly and explicitly, or ask the user before a recursive force-delete — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)."
+        overridable_deny "terse-ops harness: rm -rf is blocked. Delete narrowly and explicitly, or ask the user before a recursive force-delete — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." rm-rf
       fi
       ;;
   esac

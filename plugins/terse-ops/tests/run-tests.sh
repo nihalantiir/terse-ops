@@ -8,8 +8,8 @@
 # hand, same as the two hook scripts themselves.
 set -u
 
-hook_dir="$(dirname "$0")"
-HOOK="$hook_dir/../hooks/block-dangerous.sh"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+HOOK="$ROOT/hooks/block-dangerous.sh"
 pass=0
 fail=0
 
@@ -17,14 +17,12 @@ json_escape() {
   printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
 }
 
-run_case() {
+record_result() {
   expect="$1"
   desc="$2"
   cmd="$3"
-  esc="$(json_escape "$cmd")"
-  payload="{\"tool_input\":{\"command\":\"$esc\"}}"
-  out="$(printf '%s' "$payload" | sh "$HOOK" 2>&1)"
-  code=$?
+  code="$4"
+  out="$5"
   if [ "$expect" = "BLOCK" ]; then
     if [ "$code" -eq 2 ]; then
       pass=$((pass + 1))
@@ -40,6 +38,53 @@ run_case() {
       printf 'FAIL [expected ALLOW, got exit %s]: %s\n  cmd: %s\n  output: %s\n' "$code" "$desc" "$cmd" "$out"
     fi
   fi
+}
+
+run_case() {
+  expect="$1"
+  desc="$2"
+  cmd="$3"
+  esc="$(json_escape "$cmd")"
+  payload="{\"tool_input\":{\"command\":\"$esc\"}}"
+  out="$(printf '%s' "$payload" | sh "$HOOK" 2>&1)"
+  code=$?
+  record_result "$expect" "$desc" "$cmd" "$code" "$out"
+}
+
+# Scaffolds a throwaway repo dir (a bare .git marker, no real `git init`
+# needed -- the hook only checks .git's existence), optionally writes a
+# standing-allow file, invokes the hook with cwd set inside it (optionally a
+# nested subdir, to prove the walk-up-to-root logic), then cleans up.
+#   $4 allow_contents -- allow file body, or empty for no file at all
+#   $5 subdir         -- relative subdir to invoke from, or empty for repo root
+#   $6 no_git         -- "1" to skip creating .git (proves "no repo found" behavior)
+run_case_repo() {
+  expect="$1"
+  desc="$2"
+  cmd="$3"
+  allow_contents="$4"
+  subdir="$5"
+  no_git="${6:-0}"
+
+  tmp="$(mktemp -d)"
+  [ "$no_git" = "1" ] || mkdir "$tmp/.git"
+  if [ -n "$allow_contents" ]; then
+    mkdir -p "$tmp/.claude"
+    printf '%s\n' "$allow_contents" >"$tmp/.claude/terse-ops-allow.local.txt"
+  fi
+  invoke_dir="$tmp"
+  if [ -n "$subdir" ]; then
+    invoke_dir="$tmp/$subdir"
+    mkdir -p "$invoke_dir"
+  fi
+
+  esc="$(json_escape "$cmd")"
+  payload="{\"tool_input\":{\"command\":\"$esc\"}}"
+  out="$(cd "$invoke_dir" && printf '%s' "$payload" | sh "$HOOK" 2>&1)"
+  code=$?
+  rm -rf "$tmp"
+
+  record_result "$expect" "$desc" "$cmd" "$code" "$out"
 }
 
 # --- blocked: the hard "never" list ---
@@ -79,11 +124,38 @@ run_case ALLOW "kubectl delete pods plural"           'kubectl delete pods mypod
 run_case ALLOW "branch -d lowercase, merged"          'git branch -d merged-feature'
 run_case ALLOW "plain git status"                     'git status'
 
-# --- overrides: the scoped bypass works, and the two absolute blocks refuse it ---
+# --- one-shot overrides: the marker works, and the two absolute blocks refuse it ---
 run_case ALLOW "danger-ok overrides force-push"       'TERSE_OPS_DANGER_OK=1 git push --force origin main'
 run_case ALLOW "commit-ok overrides commit"           'TERSE_OPS_COMMIT_OK=1 git commit -m "wip"'
 run_case ALLOW "danger-ok also overrides commit"      'TERSE_OPS_DANGER_OK=1 git commit -m "wip"'
 run_case BLOCK "no override defeats --no-verify"      'TERSE_OPS_DANGER_OK=1 git commit -m "x" --no-verify'
+
+# --- standing per-repo allow (/terse-ops:allow): durable, category-scoped, revocable ---
+run_case_repo ALLOW "standing allow: commit granted"                 'git commit -m "wip"'              'commit'         ''    0
+run_case_repo ALLOW "standing allow: force-push granted"             'git push --force origin main'      'force-push'     ''    0
+run_case_repo BLOCK "standing allow: category scoping (commit-only doesn't cover force-push)" \
+                                                                      'git push --force origin main'      'commit'         ''    0
+run_case_repo BLOCK "standing allow: --no-verify still absolute"     'git commit -m "x" --no-verify'      'commit'         ''    0
+run_case_repo BLOCK "standing allow: empty/comment-only file grants nothing" \
+                                                                      'git commit -m "wip"'  '# nothing granted yet'         ''    0
+run_case_repo BLOCK "standing allow: file with no .git above it is inert" \
+                                                                      'git commit -m "wip"'              'commit'         ''    1
+run_case_repo ALLOW "standing allow: walk-up finds root from nested subdir" \
+                                                                      'git commit -m "wip"'              'commit'  'a/b/c'      0
+
+# Revoke: grant, confirm allowed, then remove the file in the same repo dir
+# and confirm the block comes back -- proves revoke actually restores
+# default behavior, not just that an unrelated fresh repo blocks by default.
+tmp="$(mktemp -d)"
+mkdir "$tmp/.git" "$tmp/.claude"
+printf '%s\n' "commit" >"$tmp/.claude/terse-ops-allow.local.txt"
+payload='{"tool_input":{"command":"git commit -m \"wip\""}}'
+out="$(cd "$tmp" && printf '%s' "$payload" | sh "$HOOK" 2>&1)"
+record_result ALLOW "standing allow: granted before revoke" 'git commit -m "wip"' "$?" "$out"
+rm -f "$tmp/.claude/terse-ops-allow.local.txt"
+out="$(cd "$tmp" && printf '%s' "$payload" | sh "$HOOK" 2>&1)"
+record_result BLOCK "standing allow: revoke restores the block" 'git commit -m "wip"' "$?" "$out"
+rm -rf "$tmp"
 
 echo
 echo "$pass passed, $fail failed"

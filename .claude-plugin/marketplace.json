@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Concise Claude Code ops: short output, cost-aware model-tier orchestration, hook-enforced damage harness, fail-fast reporting, verified research, spend/token-budget discipline.",
-    "version": "0.10.0"
+    "version": "0.11.0"
   },
   "plugins": [
     {
       "name": "terse-ops",
       "source": "./plugins/terse-ops",
       "description": "Concise output, cost-aware orchestration across model tiers, hook-enforced damage harness, fail-fast reporting, verified research, spend/token-budget discipline.",
-      "version": "0.10.0"
+      "version": "0.11.0"
     }
   ]
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.0 - 2026-08-26
+
+- Tagged as `terse-ops--v0.10.0`.
+- Added a standing, per-repository allow mechanism: `/terse-ops:allow <category>` grants a durable exception for one hook block-list category (`commit`, `force-push`, `push-delete`, `reset-hard`, `branch-delete`, `clean-force`, `rm-rf`, `terraform-destroy`, `kubectl-delete`, `drop-table`) so it stops needing a fresh `TERSE_OPS_DANGER_OK=1`/`TERSE_OPS_COMMIT_OK=1` marker every time in that repo. `/terse-ops:allow list`/`revoke <category|all>` to inspect or undo. Backed by `.claude/terse-ops-allow.local.txt` at the repo root (walked up from cwd, no `git` subprocess in the hot path), not committed by default. `--no-verify`/`--no-gpg-sign` has no path through this, structurally, same as the one-shot marker.
+- This closes a real friction point: the existing one-shot marker, used correctly with genuine explicit consent, could still get blocked by a separate Claude Code platform safety layer unrelated to this plugin. The standing allow gives a durable alternative for repeat cases in one's own repo, set up only via explicit, deliberate command, never inferred.
+- Extended both hook scripts (`block-dangerous.sh`/`.ps1`) with the repo-root walk-up and category-file check; every overridable block's denial message now names the exact `/terse-ops:allow <category>` to run.
+- Added 9 new test cases to both `tests/run-tests.sh` and `run-tests.ps1` (46 total, up from 37) covering the grant, category scoping, `--no-verify`'s absolute exemption, an inert file outside any repo, the nested-subdirectory walk-up, and revoke actually restoring the block. Verified passing 46/46 on both interpreters, plus a live end-to-end check in this repo (grant → plain commit went through with no marker → force-push still blocked under a commit-only grant → revoke → blocked again).
+- Updated `harness`, `status`, both READMEs, and the wiki (`Hooks and Safety`, `Configuration`, `Known Limitations`, `Skills Reference`) to describe the new mechanism.
+
 ## 0.10.0 - 2026-08-26
 
 - Tagged as `terse-ops--v0.9.0`.
