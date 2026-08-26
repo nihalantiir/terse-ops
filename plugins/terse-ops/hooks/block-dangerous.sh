@@ -1,6 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # PreToolUse guard for Bash calls. Backs harness's hard "never" list with an
 # actual block instead of relying on the model to remember the prompt.
+# POSIX sh only, deliberately -- no bashisms -- because it's invoked as
+# `sh block-dangerous.sh`, not executed directly, so this must run on
+# whatever `sh` is present, not assume bash. See block-dangerous.ps1 for the
+# Windows-without-bash fallback (hooks.json runs both; harmless redundancy
+# where both interpreters exist).
 set -u
 
 input="$(cat)"
@@ -16,10 +21,21 @@ deny() {
   exit 2
 }
 
+# Default is never commit on the user's behalf. The one exception: the user
+# just explicitly asked, this turn, for the commit itself (not "auto mode",
+# not implied) — that's signaled by prefixing the single command with
+# TERSE_OPS_COMMIT_OK=1, which only takes effect for that one invocation.
+# See harness for the rule on when that prefix is and isn't appropriate.
+is_commit_cmd=0
 case "$cmd" in
-  *git\ *commit*|*git\ *cherry-pick*--continue*)
-    deny "terse-ops harness: git commit is blocked. This plugin's rule is never commit on the user's behalf — stage the change and ask them to commit it." ;;
+  *git\ *commit*|*git\ *cherry-pick*--continue*) is_commit_cmd=1 ;;
 esac
+if [ "$is_commit_cmd" = 1 ]; then
+  case "$cmd" in
+    *TERSE_OPS_COMMIT_OK=1*) : ;;
+    *) deny "terse-ops harness: git commit is blocked. Default rule is never commit on the user's behalf — stage the change and ask them to commit it. If they just explicitly asked you to commit it yourself this turn, prefix the command with TERSE_OPS_COMMIT_OK=1 (see harness) — don't reuse that prefix on a later commit without asking again." ;;
+  esac
+fi
 
 case "$cmd" in
   *git\ *push*--force*|*git\ *push*\ -f\ *|*git\ *push*\ -f)
@@ -39,6 +55,23 @@ esac
 case "$cmd" in
   *git\ *push*--delete*)
     deny "terse-ops harness: git push --delete is blocked. Deleting a remote branch/tag is hard to reverse — confirm with the user and have them run it." ;;
+esac
+
+case "$cmd" in
+  *terraform*destroy*)
+    deny "terse-ops harness: terraform destroy is blocked. It tears down provisioned infrastructure — confirm with the user and have them run it." ;;
+esac
+
+case "$cmd" in
+  *kubectl*delete*)
+    deny "terse-ops harness: kubectl delete is blocked. Deleting cluster resources can be destructive and hard to reverse — confirm with the user and have them run it, or scope to a read-only check first." ;;
+esac
+
+# Case-insensitive: SQL keywords vary in case, unlike the CLI flags above.
+lc_cmd="$(printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]')"
+case "$lc_cmd" in
+  *drop\ table*)
+    deny "terse-ops harness: a raw DROP TABLE is blocked. Dropping a table is destructive and usually irreversible — confirm with the user before running it." ;;
 esac
 
 # branch -D is a force-delete that skips the merged check; -d (lowercase) is

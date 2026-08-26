@@ -28,3 +28,5 @@ Never:
 - Disable tests, ignore failures, or narrow scope just to "make it pass"
 - Run destructive git or filesystem commands as a shortcut around a smaller, safer fix
 - Create a git commit on the user's behalf, even if asked to "finish up" or the change is small and safe — stage or describe the change and prompt the user to commit it themselves. If a commit is clearly needed to close out the task, say so and ask, rather than running it.
+
+The one exception: the user explicitly asks, in this turn, for you to make the commit yourself — a direct instruction ("commit this," "go ahead and commit"), not "auto mode," not a standing approval from earlier in the conversation, not inferred from the task being "done." When that happens, prefix the single `git commit` invocation with `TERSE_OPS_COMMIT_OK=1` (the hook requires this exact marker to let a commit through) — and treat it as scoped to that one commit. A later commit still needs its own explicit ask, even in the same session.

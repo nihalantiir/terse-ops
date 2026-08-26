@@ -6,6 +6,10 @@ The top model plans, delegates, and verifies. Cheaper models do the mechanical l
 
 Not related to TERSE state language, TerseAI workflows, or be-terse hooks — this is an original ops style: concise output, orchestrator role, and safety rules, packaged as a Claude Code plugin.
 
+## Role of terse-ops
+
+This governs *how* Claude works — voice, routing, spend limits, and repo safety. It doesn't own domain work: framework, infra, and language-specific plugins still do the actual React, Terraform, SQL, or whatever the task calls for. terse-ops just applies underneath them — output stays terse, destructive commands still get the hook, delegation still routes by cost — the same way regardless of which specialist plugin is doing the domain-specific part. If a domain plugin's own instructions conflict with a safety rule here (the hook block list, the no-commit default), the safety rule wins; style and routing rules are the part meant to be composed with, not fought.
+
 ## Install
 
 ```

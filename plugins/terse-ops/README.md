@@ -55,13 +55,18 @@ None of these make the final scope or architecture call — `architect` recommen
 
 A `PreToolUse` hook backs the hard rules in `harness` with an actual block, not just prompt text. Denied at the tool-call level once this plugin is installed:
 
-- `git commit`
+- `git commit` — unless the user explicitly asked for it this turn, in which case the command carries a scoped one-shot override marker (see `harness`)
 - `git push --force` / `--force-with-lease` / `--delete`
 - `git reset --hard`
 - `git branch -D`
 - `git clean -f` (any flag combination including `-f`, e.g. `-fd`)
 - `rm -rf` (any flag ordering/combination)
 - `--no-verify` / `--no-gpg-sign`
+- `terraform destroy`
+- `kubectl delete`
+- a raw `DROP TABLE`
+
+Shipped as two hook entries so the block still runs without Git Bash/WSL: `block-dangerous.sh` (POSIX `sh`, no bashisms) and `block-dangerous.ps1` (Windows `powershell.exe`, which ships with every Windows install). Both run on every Bash call; whichever interpreter exists on the machine does the blocking — the other fails to launch and is a silent no-op, which is expected, not a bug.
 
 ## Evals
 
