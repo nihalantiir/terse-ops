@@ -2,6 +2,8 @@
 
 Behavioral regression cases for this plugin's hooks and skills, run with `claude plugin eval`.
 
+For deterministic, ungated coverage of the hook scripts themselves (no early-access feature, no API cost, runs in CI on every push), see [`../tests/`](../tests/) instead. These two suites check different things: `tests/` asserts the hook's exit code for a fixed table of commands; the cases below assert the *agent's* behavior when a hook blocks it mid-task (does it report the block correctly, not silently retry or claim success).
+
 **Status:** `claude plugin eval` is early access and gated per organization — as of this writing it prints `` `plugin eval` is currently in early access `` and exits without running. These cases are written to the documented schema and validated structurally (`claude plugin validate`), but have not been run end-to-end. Once the feature is enabled for this account/org, run:
 
 ```bash

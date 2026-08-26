@@ -89,9 +89,11 @@ Shipped as two hook entries so the block still runs without Git Bash/WSL: `block
 
 Every check runs per-segment, scoped to one logical command split on `;`/`&`/`|` — not against the whole raw compound line. A command spanning `&&`/`;`/`|` can't trip a rule meant for a different clause (e.g. `git log && echo "committed"` no longer false-positives the commit block just because both words appear somewhere on the line). Quoting isn't understood, which is a known, accepted gap.
 
-## Evals
+## Tests and evals
 
-`evals/` has `claude plugin eval` cases covering the hook blocks above and the `output` skill's brevity rule. The feature is early access and gated per org — see `evals/README.md` for status and how to run it once available.
+`tests/` has a plain shell/PowerShell test suite that asserts `block-dangerous.sh`/`.ps1`'s exit code (allow/block) against a fixed table of commands, including the known false-positive traps from past bugs. No gating, no API cost, runs in CI on every push (`.github/workflows/hook-tests.yml`).
+
+`evals/` has `claude plugin eval` cases covering the same hook blocks plus the `output` skill's brevity rule, but at the agent-behavior level (does the agent correctly report a block instead of retrying or claiming success). That feature is early access and gated per org, see `evals/README.md` for status.
 
 ## Local development
 

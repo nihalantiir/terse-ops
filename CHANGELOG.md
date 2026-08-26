@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0 - 2026-08-26
+
+- Tagged as `terse-ops--v0.9.0`.
+- Added `plugins/terse-ops/tests/` — an ungated, dependency-free shell/PowerShell test suite (`run-tests.sh`/`run-tests.ps1`) that feeds `block-dangerous.sh`/`.ps1` the same PreToolUse JSON payload shape Claude Code sends and asserts the exit code (0 allow, 2 block) across 37 cases: every hard-blocked command, every known false-positive trap from past bugs (long flags containing a trigger letter, cross-segment word leakage), and the override markers including the two absolute blocks refusing to be overridden. Verified passing 37/37 on both interpreters.
+- Added `.github/workflows/hook-tests.yml` — runs both suites on every push/PR, no API key or cost, complementing the gated `claude plugin eval` workflow.
+- Cross-linked `tests/` and `evals/` in both READMEs so it's clear which suite checks what (hook exit code vs. agent-reported behavior).
+
 ## 0.9.0 - 2026-08-26
 
 - Tagged as `terse-ops--v0.8.0`.

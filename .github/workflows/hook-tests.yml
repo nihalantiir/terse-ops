@@ -1,0 +1,22 @@
+name: Hook tests
+
+# Ungated, local assertions against block-dangerous.sh/.ps1 -- no
+# `claude plugin eval` gate, no API key, no cost. Runs on every push/PR.
+# See plugins/terse-ops/tests/ for the cases and plugin-eval.yml for the
+# separate, gated behavioral eval suite.
+on:
+  push:
+  pull_request:
+
+jobs:
+  sh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sh plugins/terse-ops/tests/run-tests.sh
+
+  powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: powershell -NoProfile -ExecutionPolicy Bypass -File plugins/terse-ops/tests/run-tests.ps1

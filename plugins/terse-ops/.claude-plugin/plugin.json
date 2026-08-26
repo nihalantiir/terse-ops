@@ -1,6 +1,6 @@
 {
   "name": "terse-ops",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Concise output, cost-aware orchestration across model tiers, hook-enforced damage harness, fail-fast reporting, verified research, spend/token-budget discipline.",
   "author": {
     "name": "nihalantiir"
