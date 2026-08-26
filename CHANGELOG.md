@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 - 2026-08-26
+
+- Tagged as `terse-ops--v1.0.0`.
+- Removed the Mermaid architecture diagram from the root README (looked bad rendered).
+- Added a wiki [Prompt Guide](https://github.com/nihalantiir/terse-ops/wiki/Prompt-Guide) page: `CLAUDE.md` phrase-to-command mappings so plain language ("verify that", "watch spend", "run autonomously") triggers the real on-demand skill via its actual `/terse-ops:<name>` command, plus a session-starter prompt for one-off sessions. No plugin code changes — `CLAUDE.md` is read in full every session, so this reuses that existing mechanism rather than reverting 0.7.0's ambient-footprint thinning.
+- Simplifying pass now that the wiki is the canonical deep reference: trimmed the plugin README's "Known limitations" and "Hooks" sections from full prose to short summaries linking to the wiki's `Known Limitations` and `Hooks and Safety` pages (the block-list table stays inline, it's a useful quick reference). Refreshed stale skill/page counts across the wiki (`allow` wasn't reflected in a couple of intro lines).
+- This is the final release in this push. From here: documented, deliberate trade-offs only, no known open bugs.
+
 ## 1.0.0 - 2026-08-26
 
 - Tagged as `terse-ops--v0.12.0`.

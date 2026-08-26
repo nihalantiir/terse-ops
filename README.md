@@ -13,7 +13,7 @@ A Claude Code plugin marketplace for concise, disciplined, cost-aware agentic wo
 
 The top model plans, delegates, and verifies. Cheaper models do the mechanical labor beneath it. A hook-enforced damage harness limits blast radius. Failures get reported once, not researched forever.
 
-**Contents:** [Role of terse-ops](#role-of-terse-ops) · [Install](#install) · [Updating](#updating) · [What's in it](#whats-in-it) · [License](#license)
+**Contents:** [Role of terse-ops](#role-of-terse-ops) · [Install](#install) · [Updating](#updating) · [What's in it](#whats-in-it) · [License](#license) · [Wiki](https://github.com/nihalantiir/terse-ops/wiki)
 
 ## Role of terse-ops
 
@@ -24,19 +24,6 @@ This governs *how* Claude works, not what it builds.
 - **On conflict:** safety always wins. If a domain plugin's own instructions clash with a rule here (the hook block list, the no-commit default), the safety rule takes it. Style and routing are the part meant to be composed with, not fought.
 
 The `compose` skill makes this explicit and behavioral, not just documentation.
-
-```mermaid
-flowchart TD
-    User --> Orchestrator
-    Orchestrator -->|always on| Skills["output · harness · fail-fast · economy · compose"]
-    Orchestrator -->|"/terse-ops:&lt;name&gt;"| OptIn["orchestrate · verify · auto · research · budget · reasoning"]
-    Orchestrator -->|delegates| Agents["scout · researcher · builder · checker · architect"]
-    Orchestrator --> Hook{{PreToolUse hook}}
-    Agents --> Hook
-    Hook -->|allowed| Run[Command executes]
-    Hook -->|blocked| Deny["One-shot marker, or a standing /terse-ops:allow"]
-    Deny -->|granted| Run
-```
 
 ## Install
 
@@ -68,7 +55,7 @@ This marketplace currently ships one plugin: [`terse-ops`](plugins/terse-ops/REA
 - **Tests**: a 46-case, ungated shell/PowerShell suite asserting the hook's allow/block decisions, running in CI on every push (`.github/workflows/hook-tests.yml`)
 - **Evals**: `claude plugin eval` cases covering the same hook blocks and output brevity at the agent-behavior level (early access, not yet runnable, see `plugins/terse-ops/evals/README.md`)
 
-See the [plugin README](plugins/terse-ops/README.md) for the full breakdown of each skill and agent.
+See the [plugin README](plugins/terse-ops/README.md) for the full breakdown of each skill and agent, or the [wiki](https://github.com/nihalantiir/terse-ops/wiki) for the deep reference — including the [Prompt Guide](https://github.com/nihalantiir/terse-ops/wiki/Prompt-Guide) for making plain language trigger the on-demand skills instead of typing the exact command.
 
 ## License
 
