@@ -36,6 +36,7 @@ Explicit-only (never auto-triggered — invoke by name when you want the behavio
 |---|---|
 | `/terse-ops:route <task>` | Get the routing call for a task per `orchestrate`, without executing it. Runs at `effort: low` — it's a fixed-shape classification, not open-ended reasoning (see `reasoning`). |
 | `/terse-ops:verify-now [target]` | Force a `verify` pass on the most recent diff/delegated work right now, rather than waiting for it to fire before a "done" report. |
+| `/terse-ops:status` | Report current phase, anything the harness hook has blocked this session, and open items — read from the conversation itself, no separate state store. |
 
 ## Agents
 

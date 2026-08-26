@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0 - 2026-08-26
+
+- Added `/terse-ops:status` — reports current phase, anything the harness hook has blocked this session, and open items, read from the conversation itself
+- Evals: added cases for the `terraform destroy`, `kubectl delete`, and `DROP TABLE` hook blocks added in 0.4.0
+
 ## 0.4.0 - 2026-08-26
 
 - Hook: added `terraform destroy`, `kubectl delete`, and raw `DROP TABLE` to the destructive-command block list

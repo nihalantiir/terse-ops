@@ -35,7 +35,7 @@ In the web app, the same actions live under `/plugin` → **Marketplaces** tab (
 This marketplace currently ships one plugin: [`terse-ops`](plugins/terse-ops/README.md), which adds:
 
 - **Skills** — behavioral rules for output style, orchestration/routing, delegate verification, a damage harness, auto-mode discipline, fail-fast reporting, verified (not stale-recalled) research, spend/usage-tier limits, tool-call economy, and reasoning-effort discipline
-- **Commands** — `/terse-ops:route` and `/terse-ops:verify-now`, for forcing a routing decision or a verification pass on demand instead of waiting on auto-trigger
+- **Commands** — `/terse-ops:route`, `/terse-ops:verify-now`, and `/terse-ops:status`, for forcing a routing decision, a verification pass, or a session-state report on demand instead of waiting on auto-trigger
 - **Agents** — `scout`, `researcher`, `builder`, `checker`, and `architect`: matched-cost subagents for codebase search, web research, mechanical implementation, verification, and a deep-reasoning planning pass, so the orchestrator isn't doing every step itself at top-model cost
 - **Hooks** — a `PreToolUse` guard that blocks the harness skill's hard "never" list (commits on your behalf, force-push, `--no-verify`, `rm -rf`, `reset --hard`, `branch -D`, `clean -f`) at the tool-call level, not just as a prompt instruction
 - **Evals** — `claude plugin eval` cases covering the hook blocks and output brevity (early access, not yet runnable — see `plugins/terse-ops/evals/README.md`)
