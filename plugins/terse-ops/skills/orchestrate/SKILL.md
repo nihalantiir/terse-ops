@@ -1,5 +1,6 @@
 ---
 description: Use the strongest model as a high-level orchestrator. Plan, split work, and leave implementation detail to lower-cost steps or subagents when available.
+disable-model-invocation: true
 ---
 
 # Orchestrate

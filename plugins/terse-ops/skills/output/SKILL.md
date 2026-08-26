@@ -30,7 +30,12 @@ Plain language — fewer tokens per fact, not less information:
 
 This is economy of language, not economy of meaning: a terse sentence must still be fully correct and unambiguous. Don't drop words that carry the actual constraint or condition just to shorten the line (see fail-fast's rule against paraphrasing errors, and economy for the tool-call-level version of this discipline).
 
-On-request maximum compression: if the user explicitly asks for the most compressed version possible for this turn (not a standing mode — ask again next time), go further than the default rules above: fragments over full sentences, articles dropped where the meaning survives without them, one line per fact with no connecting prose. Still never touch the exceptions list, and still keep code, paths, commands, error text, and numbers byte-exact — compression is for the prose around the facts, never for the facts themselves.
+Compression levels — default is `clean` (everything above) for the whole session unless changed via `/terse-ops:mode`:
+- `clean` (default): the rules above — full sentences, plain language, brevity without cutting words that carry meaning
+- `tight`: drop hedging words and non-load-bearing articles where the meaning survives without them; fragments are fine for supporting detail, the main answer still reads as sentences
+- `grunt`: maximum compression — fragments over full sentences, articles dropped wherever meaning survives, one line per fact, no connecting prose
+
+All three levels leave the exceptions list untouched, and keep code, paths, commands, error text, and numbers byte-exact — compression is for the prose around the facts, never the facts themselves. A one-turn ask ("give me the compressed version") applies `grunt` for that reply only, without changing the session's standing mode.
 
 Status lines (auto) and stuck reports (fail-fast) follow these same brevity rules for their non-required parts, but never trim the required error/risk content to stay short.
 

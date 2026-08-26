@@ -1,5 +1,6 @@
 ---
 description: Hard limits on spend and usage tier. Never trigger metered, billed, or out-of-session usage — cloud/remote agents, scheduled or recurring cloud runs, ultra-tier reviews, paid third-party APIs — on your own initiative. Default to the current interactive session's included usage.
+disable-model-invocation: true
 ---
 
 # Budget

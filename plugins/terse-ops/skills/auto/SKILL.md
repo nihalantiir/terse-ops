@@ -1,5 +1,6 @@
 ---
 description: Improve auto mode interactions with clear status, stop rules, and less thrash. Use when running longer autonomous coding sessions.
+disable-model-invocation: true
 ---
 
 # Auto

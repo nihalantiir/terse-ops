@@ -1,5 +1,6 @@
 ---
 description: Verify delegated work before reporting it done — check the actual diff or output, don't trust a subagent's summary. Use any time work was handed off (see orchestrate) and is about to be reported complete.
+disable-model-invocation: true
 ---
 
 # Verify

@@ -10,6 +10,17 @@ function Deny($msg) {
     exit 2
 }
 
+# Explicit, scoped bypass for the destructive/hard-to-reverse checks below --
+# not for --no-verify/--no-gpg-sign, which stays absolute (bypassing
+# signing/hooks is a different category from "delete this on purpose", see
+# harness). Signals the user explicitly asked, this turn, for exactly this
+# action. Scoped to the one command it's prefixed on, not a standing setting.
+function Deny-Overridable($msg, $seg) {
+    if ($seg -notlike '*TERSE_OPS_DANGER_OK=1*') {
+        Deny $msg
+    }
+}
+
 $raw = [Console]::In.ReadToEnd()
 $cmd = $raw
 try {
@@ -27,28 +38,28 @@ function Check-Segment($seg) {
     # explicitly asked, this turn, for the commit itself — signaled by
     # prefixing the single command with TERSE_OPS_COMMIT_OK=1 (see harness).
     $isCommit = ($seg -like '*git *commit*') -or ($seg -like '*git *cherry-pick*--continue*')
-    if ($isCommit -and ($seg -notlike '*TERSE_OPS_COMMIT_OK=1*')) {
+    if ($isCommit -and ($seg -notlike '*TERSE_OPS_COMMIT_OK=1*') -and ($seg -notlike '*TERSE_OPS_DANGER_OK=1*')) {
         Deny "terse-ops harness: git commit is blocked. Default rule is never commit on the user's behalf -- stage the change and ask them to commit it. If they just explicitly asked you to commit it yourself this turn, prefix the command with TERSE_OPS_COMMIT_OK=1 (see harness) -- don't reuse that prefix on a later commit without asking again."
     }
 
     if (($seg -like '*git *push*--force*') -or ($seg -like '*git *push* -f *') -or ($seg -like '*git *push* -f')) {
-        Deny "terse-ops harness: force-push is blocked. Confirm with the user and have them run it, or get explicit sign-off first."
+        Deny-Overridable "terse-ops harness: force-push is blocked. Confirm with the user and have them run it, or get explicit sign-off first -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg
     }
 
     if (($seg -like '*--no-verify*') -or ($seg -like '*--no-gpg-sign*')) {
-        Deny "terse-ops harness: --no-verify/--no-gpg-sign is blocked. Do not bypass hooks or signing to force a command through."
+        Deny "terse-ops harness: --no-verify/--no-gpg-sign is blocked. Do not bypass hooks or signing to force a command through. This one has no override -- it's a different category from a destructive-on-purpose action."
     }
 
     if ($seg -like '*reset *--hard*') {
-        Deny "terse-ops harness: git reset --hard is blocked. It discards uncommitted work -- stash first or confirm with the user."
+        Deny-Overridable "terse-ops harness: git reset --hard is blocked. It discards uncommitted work -- stash first or confirm with the user -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg
     }
 
     if ($seg -like '*git *push*--delete*') {
-        Deny "terse-ops harness: git push --delete is blocked. Deleting a remote branch/tag is hard to reverse -- confirm with the user and have them run it."
+        Deny-Overridable "terse-ops harness: git push --delete is blocked. Deleting a remote branch/tag is hard to reverse -- confirm with the user and have them run it -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg
     }
 
     if ($seg -like '*terraform*destroy*') {
-        Deny "terse-ops harness: terraform destroy is blocked. It tears down provisioned infrastructure -- confirm with the user and have them run it."
+        Deny-Overridable "terse-ops harness: terraform destroy is blocked. It tears down provisioned infrastructure -- confirm with the user and have them run it -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg
     }
 
     # kubectl delete pod/pods is routine -- a controller reschedules it, so
@@ -70,18 +81,18 @@ function Check-Segment($seg) {
         if ($sawDelete) {
             if ($resource -in @('pod', 'pods', 'po')) {
                 if ($clusterWide) {
-                    Deny "terse-ops harness: kubectl delete pod --all-namespaces is blocked. That's cluster-wide, not a routine single-pod restart -- confirm with the user first."
+                    Deny-Overridable "terse-ops harness: kubectl delete pod --all-namespaces is blocked. That's cluster-wide, not a routine single-pod restart -- confirm with the user first -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg
                 }
             } else {
                 $shown = if ($resource) { $resource } else { 'unspecified' }
-                Deny "terse-ops harness: kubectl delete is blocked (resource: $shown). Deleting anything other than a pod isn't self-healing under a controller and can be destructive or hard to reverse -- confirm with the user, or scope to a read-only check first."
+                Deny-Overridable "terse-ops harness: kubectl delete is blocked (resource: $shown). Deleting anything other than a pod isn't self-healing under a controller and can be destructive or hard to reverse -- confirm with the user, or scope to a read-only check first -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg
             }
         }
     }
 
     # -like is case-insensitive by default in PowerShell, unlike bash's case.
     if ($seg -like '*drop table*') {
-        Deny "terse-ops harness: a raw DROP TABLE is blocked. Dropping a table is destructive and usually irreversible -- confirm with the user before running it."
+        Deny-Overridable "terse-ops harness: a raw DROP TABLE is blocked. Dropping a table is destructive and usually irreversible -- confirm with the user before running it -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg
     }
 
     # branch -D: flags can combine (-Df, -fD), so check tokens. Restricted to
@@ -91,7 +102,7 @@ function Check-Segment($seg) {
     if ($seg -like '*branch*') {
         foreach ($tok in ($seg -split '\s+')) {
             if ($tok -like '-*' -and $tok -notlike '--*' -and $tok -cmatch 'D') {
-                Deny "terse-ops harness: git branch -D is blocked. It force-deletes an unmerged branch -- confirm with the user or use -d on a merged branch."
+                Deny-Overridable "terse-ops harness: git branch -D is blocked. It force-deletes an unmerged branch -- confirm with the user or use -d on a merged branch -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg
             }
         }
     }
@@ -102,7 +113,7 @@ function Check-Segment($seg) {
     if ($seg -like '*clean*') {
         foreach ($tok in ($seg -split '\s+')) {
             if ($tok -eq '--force' -or ($tok -like '-*' -and $tok -notlike '--*' -and $tok -match 'f')) {
-                Deny "terse-ops harness: git clean -f is blocked. It permanently deletes untracked files -- confirm with the user first."
+                Deny-Overridable "terse-ops harness: git clean -f is blocked. It permanently deletes untracked files -- confirm with the user first -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg
             }
         }
     }
@@ -125,7 +136,7 @@ function Check-Segment($seg) {
             }
         }
         if ($hasR -and $hasF) {
-            Deny "terse-ops harness: rm -rf is blocked. Delete narrowly and explicitly, or ask the user before a recursive force-delete."
+            Deny-Overridable "terse-ops harness: rm -rf is blocked. Delete narrowly and explicitly, or ask the user before a recursive force-delete -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg
         }
     }
 }

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 - 2026-08-26
+
+- Fixed real casing bug: the GitHub owner is `nihalantiir` (lowercase, confirmed via the GitHub API), but every file referenced `Nihalantiir`. Fixed in both manifests and both READMEs' install commands; left the LICENSE copyright name alone since that's a display-name choice, not a functional identifier.
+- Added output compression levels as first-class UX: `clean` (default)/`tight`/`grunt`, set for the session via `/terse-ops:mode`, replacing the earlier one-off "on-request" wording.
+- Added `/terse-ops:solo` — turns off delegation to subagents for the rest of the session.
+- Generalized the commit-only override marker: `TERSE_OPS_DANGER_OK=1` now works as a scoped, one-shot bypass on every overridable hook block (force-push, `reset --hard`, `rm -rf`, `branch -D`, `clean -f`, `terraform destroy`, `kubectl delete`, `DROP TABLE`, `push --delete`). `--no-verify`/`--no-gpg-sign` stays absolute, no override, ever.
+- Thinned the always-on skill set: `output`, `harness`, `fail-fast`, `economy`, `compose` stay auto-triggered; `orchestrate`, `verify`, `auto`, `research`, `budget`, `reasoning` became explicit-invoke-only (`disable-model-invocation: true`) — each now needs `/terse-ops:<name>` to take effect in a session, reducing the ambient skill-listing footprint from 11 entries to 5. **This is a real behavior change, not just a token optimization**: a fresh session no longer auto-verifies delegated work, auto-enforces spend limits, or auto-applies autonomous-session stop rules unless invoked.
+
 ## 0.6.0 - 2026-08-26
 
 - Fixed a real cross-segment false-positive bug in both hook scripts: every pattern check previously scanned the *entire* raw command line, so a compound command (`&&`/`;`/`|`) could trip a rule meant for a completely different clause (e.g. `git log && echo "committed"` blocked as a commit attempt). All checks now run per-segment.

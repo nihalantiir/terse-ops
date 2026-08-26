@@ -13,7 +13,7 @@ This governs *how* Claude works — voice, routing, spend limits, and repo safet
 ## Install
 
 ```
-/plugin marketplace add Nihalantiir/terse-ops
+/plugin marketplace add nihalantiir/terse-ops
 /plugin install terse-ops@terse-ops
 ```
 
@@ -34,10 +34,10 @@ In the web app, the same actions live under `/plugin` → **Marketplaces** tab (
 
 This marketplace currently ships one plugin: [`terse-ops`](plugins/terse-ops/README.md), which adds:
 
-- **Skills** — behavioral rules for output style, orchestration/routing, delegate verification, a damage harness, auto-mode discipline, fail-fast reporting, verified (not stale-recalled) research, spend/usage-tier limits, tool-call economy, reasoning-effort discipline, and composing safely with domain-specific plugins
-- **Commands** — `/terse-ops:route`, `/terse-ops:verify-now`, and `/terse-ops:status`, for forcing a routing decision, a verification pass, or a session-state report on demand instead of waiting on auto-trigger
+- **Skills** — a thin always-on core (output style incl. `clean`/`tight`/`grunt` compression, damage harness, fail-fast reporting, tool-call economy, composing with domain-specific plugins) plus six on-demand skills (orchestration/routing, delegate verification, auto-mode discipline, verified research, spend/usage-tier limits, reasoning-effort discipline) invoked explicitly when you want them active for a session
+- **Commands** — `/terse-ops:route`, `/terse-ops:verify-now`, `/terse-ops:status`, `/terse-ops:mode`, `/terse-ops:solo`, plus one `/terse-ops:<name>` per on-demand skill above
 - **Agents** — `scout`, `researcher`, `builder`, `checker`, and `architect`: matched-cost subagents for codebase search, web research, mechanical implementation, verification, and a deep-reasoning planning pass, so the orchestrator isn't doing every step itself at top-model cost
-- **Hooks** — a `PreToolUse` guard that blocks the harness skill's hard "never" list (commits on your behalf, force-push, `--no-verify`, `rm -rf`, `reset --hard`, `branch -D`, `clean -f`) at the tool-call level, not just as a prompt instruction
+- **Hooks** — a `PreToolUse` guard that blocks the harness skill's hard "never" list (commits on your behalf, force-push, `--no-verify`, `rm -rf`, `reset --hard`, `branch -D`, `clean -f`, `terraform destroy`, `kubectl delete`, `DROP TABLE`) at the tool-call level, not just as a prompt instruction — most of them carry a scoped, explicit one-shot override, `--no-verify`/`--no-gpg-sign` never does
 - **Evals** — `claude plugin eval` cases covering the hook blocks and output brevity (early access, not yet runnable — see `plugins/terse-ops/evals/README.md`)
 
 See the [plugin README](plugins/terse-ops/README.md) for the full breakdown of each skill and agent.

@@ -1,5 +1,6 @@
 ---
 description: Ground answers in verified information instead of recalled training data. Use for research tasks, external/library/API questions, and any chat answer where freshness or accuracy of an external fact matters.
+disable-model-invocation: true
 ---
 
 # Research

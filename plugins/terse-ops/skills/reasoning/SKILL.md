@@ -1,5 +1,6 @@
 ---
 description: Control reasoning-token cost via effort level and scope, without cutting correctness on tasks that need real thinking. Covers what the effort field actually does and what it doesn't (it isn't a reply-length knob).
+disable-model-invocation: true
 ---
 
 # Reasoning
