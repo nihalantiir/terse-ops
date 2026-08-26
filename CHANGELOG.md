@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.0 - 2026-08-26
+
+- Tagged as `terse-ops--v0.7.0`.
+- README: added a "Known limitations" section recording three accepted design trade-offs so they don't get re-litigated: `mode`/`status` are skill-enforced (no hook or SessionStart state behind them, unlike `harness`); no durable state store, so mode/phase tracking can drift after a long session or a context compaction; and the CLAUDE.md workaround for making an opt-in skill act "always on" for a project without editing the plugin itself.
+
 ## 0.7.0 - 2026-08-26
 
 - Fixed real casing bug: the GitHub owner is `nihalantiir` (lowercase, confirmed via the GitHub API), but every file referenced `Nihalantiir`. Fixed in both manifests and both READMEs' install commands; left the LICENSE copyright name alone since that's a display-name choice, not a functional identifier.

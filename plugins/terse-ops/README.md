@@ -38,6 +38,12 @@ On-demand — not auto-triggered (excluded from the ambient skill listing entire
 
 **These six apply only once invoked in that session** — a fresh session won't auto-verify delegated work, auto-check spend, or auto-apply autonomous-session stop rules until you (or a CLAUDE.md, or the model on its own initiative if it already knows to) run the matching `/terse-ops:` command. That's the deliberate tradeoff for a smaller ambient footprint; if you want any of these back to always-on, drop `disable-model-invocation: true` from that skill's frontmatter.
 
+## Known limitations
+
+- **`mode`/`status` are skill-enforced, not hook-backed.** `/terse-ops:mode` and `/terse-ops:status` work by asking the model to track state in the conversation and follow the matching skill's instructions — unlike `harness`, there's no `PreToolUse`/`SessionStart` hook or file behind them. Deliberate: durable state would mean writing and cleaning up session files. The trade-off is that the model's own adherence is the only enforcement.
+- **No durable state store.** Because mode and phase live in the conversation rather than a file, a very long session or a context compaction can lose track of the current mode and drift back to the `clean` default, or misreport a phase in `/terse-ops:status`. Accepted for a stateless, install-and-go plugin — re-run `/terse-ops:mode` after a compaction if it matters, rather than assuming it held.
+- **Opt-in skills need a standing nudge to act "always on."** The six skills above only take effect once invoked per session. To make one always-on for a project without editing the plugin, add the matching `/terse-ops:<name>` command to that project's `CLAUDE.md` — Claude reads and follows it every session. To make it always-on everywhere instead, drop `disable-model-invocation: true` from that skill's frontmatter (same lever 0.7.0 used to thin the set down).
+
 Commands (all explicit-invoke-only, all six above included):
 
 | Command | Purpose |
