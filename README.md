@@ -25,6 +25,19 @@ This governs *how* Claude works, not what it builds.
 
 The `compose` skill makes this explicit and behavioral, not just documentation.
 
+```mermaid
+flowchart TD
+    User --> Orchestrator
+    Orchestrator -->|always on| Skills["output · harness · fail-fast · economy · compose"]
+    Orchestrator -->|"/terse-ops:&lt;name&gt;"| OptIn["orchestrate · verify · auto · research · budget · reasoning"]
+    Orchestrator -->|delegates| Agents["scout · researcher · builder · checker · architect"]
+    Orchestrator --> Hook{{PreToolUse hook}}
+    Agents --> Hook
+    Hook -->|allowed| Run[Command executes]
+    Hook -->|blocked| Deny["One-shot marker, or a standing /terse-ops:allow"]
+    Deny -->|granted| Run
+```
+
 ## Install
 
 ```

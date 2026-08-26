@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0 - 2026-08-26
+
+- Tagged as `terse-ops--v0.11.0`.
+- CI: added a `validate` job running `claude plugin validate` on every push/PR (previously only a documented local dev step), and a `parity` job that runs both `run-tests.sh` and `run-tests.ps1` on one runner and fails if their reported totals ever diverge, catching the two hand-synced hook scripts (or their test suites) drifting apart.
+- Fixed a real test-isolation bug found while re-running the suite locally: the baseline `run_case`/`Invoke-Case` helpers didn't scaffold their own directory, so a real standing allow granted in the repo the suite is run from (see 0.11.0) could leak into cases expecting a plain block. Both now run from a fresh, `.git`-free temp directory, matching how `run_case_repo`/`Invoke-CaseInRepo` were already isolated. CI was never affected (fresh checkout, no local allow file ever exists there), but local runs now behave identically regardless of ambient state.
+- Discovered and documented a real scoping nuance in the standing-allow mechanism while using it for real: the hook checks the allow file from its own launch directory, which tracks the Claude Code session's project root, not any `cd` embedded earlier in the same compound command. `cd other-repo && git commit ...` as one Bash call is checked against the session's project root, not `other-repo`. Documented in `harness` and the wiki's Known Limitations page as an accepted imprecision, the same category as per-segment splitting not understanding quoting.
+- Added `.gitattributes` (`* text=auto eol=lf`) — `block-dangerous.sh` is the actual safety boundary, and a Windows contributor with `core.autocrlf=true` could otherwise silently get CRLF line endings in it on checkout.
+- Added the missing `keywords` array to `.claude-plugin/marketplace.json` (present in `plugin.json`, absent here), and added `hooks`/`delegation` to both.
+- Added a Mermaid architecture diagram to the root README and a decision-flow diagram to the wiki's Hooks and Safety page (GitHub renders Mermaid natively in both).
+- Added a wiki footer (`_Footer.md`, rendered on every page automatically) linking back to Home, the repo, and Releases.
+
 ## 0.11.0 - 2026-08-26
 
 - Tagged as `terse-ops--v0.10.0`.

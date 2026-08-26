@@ -23,11 +23,21 @@ function Record-Result {
     }
 }
 
+# Runs from a fresh, throwaway directory with no .git anywhere above it, so
+# these baseline cases can't pick up a real standing-allow file from
+# whatever repo the suite happens to be run from (see Invoke-CaseInRepo
+# below for cases that deliberately want a repo/allow-file present).
 function Invoke-Case {
     param([string]$Expect, [string]$Desc, [string]$Cmd)
     $payload = (@{ tool_input = @{ command = $Cmd } } | ConvertTo-Json -Compress)
+    $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
+    New-Item -ItemType Directory -Path $tmp | Out-Null
+    Push-Location $tmp
     $out = $payload | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Hook 2>&1
-    Record-Result $Expect $Desc $Cmd $LASTEXITCODE ($out -join "`n")
+    $code = $LASTEXITCODE
+    Pop-Location
+    Remove-Item -Recurse -Force $tmp
+    Record-Result $Expect $Desc $Cmd $code ($out -join "`n")
 }
 
 # Scaffolds a throwaway repo dir (a bare .git marker, no real `git init`

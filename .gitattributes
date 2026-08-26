@@ -1,0 +1,5 @@
+# Force LF everywhere, regardless of a contributor's local core.autocrlf.
+# block-dangerous.sh is the actual safety boundary -- a Windows checkout
+# with core.autocrlf=true (a common default) could otherwise silently pick
+# up CRLF line endings in that file, which risks corrupting `sh` execution.
+* text=auto eol=lf

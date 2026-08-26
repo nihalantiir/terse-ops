@@ -9,6 +9,13 @@ on:
   pull_request:
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/setup-claude-code@v1
+      - run: claude plugin validate ./plugins/terse-ops
+
   sh:
     runs-on: ubuntu-latest
     steps:
@@ -20,3 +27,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: powershell -NoProfile -ExecutionPolicy Bypass -File plugins/terse-ops/tests/run-tests.ps1
+
+  # Both hook scripts are hand-synced with no shared source (see
+  # block-dangerous.ps1's own header comment). This job re-runs both test
+  # suites on one runner and fails if their reported totals ever diverge --
+  # catches the two scripts (or their test suites) silently drifting apart,
+  # rather than just checking each independently reports "0 failed" on its
+  # own possibly-differently-sized case list.
+  parity:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare sh vs PowerShell suite totals
+        shell: bash
+        run: |
+          sh_out="$(sh plugins/terse-ops/tests/run-tests.sh)"
+          echo "$sh_out"
+          sh_total="$(printf '%s\n' "$sh_out" | grep -oE '[0-9]+ passed, [0-9]+ failed' | tail -1)"
+          ps_out="$(powershell -NoProfile -ExecutionPolicy Bypass -File plugins/terse-ops/tests/run-tests.ps1)"
+          echo "$ps_out"
+          ps_total="$(printf '%s\n' "$ps_out" | grep -oE '[0-9]+ passed, [0-9]+ failed' | tail -1)"
+          if [ "$sh_total" != "$ps_total" ]; then
+            echo "Parity check failed: sh suite reported '$sh_total', PowerShell suite reported '$ps_total'"
+            exit 1
+          fi
+          echo "Parity OK: both suites reported $sh_total"

@@ -40,14 +40,20 @@ record_result() {
   fi
 }
 
+# Runs from a fresh, throwaway directory with no .git anywhere above it, so
+# these baseline cases can't pick up a real standing-allow file from
+# whatever repo the suite happens to be run from (see run_case_repo below
+# for cases that deliberately want a repo/allow-file present).
 run_case() {
   expect="$1"
   desc="$2"
   cmd="$3"
   esc="$(json_escape "$cmd")"
   payload="{\"tool_input\":{\"command\":\"$esc\"}}"
-  out="$(printf '%s' "$payload" | sh "$HOOK" 2>&1)"
+  tmp="$(mktemp -d)"
+  out="$(cd "$tmp" && printf '%s' "$payload" | sh "$HOOK" 2>&1)"
   code=$?
+  rm -rf "$tmp"
   record_result "$expect" "$desc" "$cmd" "$code" "$out"
 }
 
