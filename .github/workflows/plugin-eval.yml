@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: anthropics/setup-claude-code@v1
+      - run: npm install -g @anthropic-ai/claude-code
       - run: claude plugin eval ./plugins/terse-ops --json eval-results.json --threshold 0.9 --max-cost-usd 10
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

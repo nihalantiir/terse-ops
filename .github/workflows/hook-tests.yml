@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: anthropics/setup-claude-code@v1
+      - run: npm install -g @anthropic-ai/claude-code
       - run: claude plugin validate ./plugins/terse-ops
 
   sh:
