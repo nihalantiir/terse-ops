@@ -6,16 +6,24 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/nihalantiir/terse-ops" alt="License"></a>
   <a href="https://github.com/nihalantiir/terse-ops/tags"><img src="https://img.shields.io/github/v/tag/nihalantiir/terse-ops?label=version&sort=semver" alt="Latest version"></a>
   <a href="https://github.com/nihalantiir/terse-ops/issues"><img src="https://img.shields.io/github/issues/nihalantiir/terse-ops" alt="Open issues"></a>
-  <a href="https://docs.claude.com/en/docs/claude-code/plugins"><img src="https://img.shields.io/badge/Claude_Code-plugin-3fb950" alt="Claude Code plugin"></a>
+  <a href="https://docs.claude.com/en/docs/claude-code/plugins"><img src="https://img.shields.io/badge/Claude_Code-plugin-d97757" alt="Claude Code plugin"></a>
 </p>
 
 A Claude Code plugin marketplace for concise, disciplined, cost-aware agentic work.
 
 The top model plans, delegates, and verifies. Cheaper models do the mechanical labor beneath it. A hook-enforced damage harness limits blast radius. Failures get reported once, not researched forever.
 
+**Contents:** [Role of terse-ops](#role-of-terse-ops) · [Install](#install) · [Updating](#updating) · [What's in it](#whats-in-it) · [License](#license)
+
 ## Role of terse-ops
 
-This governs *how* Claude works: voice, routing, spend limits, and repo safety. It doesn't own domain work. Framework, infra, and language-specific plugins still do the actual React, Terraform, SQL, or whatever the task calls for. terse-ops applies underneath them: output stays terse, destructive commands still get the hook, delegation still routes by cost, the same way regardless of which specialist plugin handles the domain-specific part. If a domain plugin's own instructions conflict with a safety rule here (the hook block list, the no-commit default), the safety rule wins. Style and routing rules are the part meant to be composed with, not fought. The `compose` skill makes this explicit and behavioral, not just documentation.
+This governs *how* Claude works, not what it builds.
+
+- **Owns:** voice and output style, cost-aware delegation across model tiers, spend limits, and repo safety (the hook-enforced harness).
+- **Doesn't own:** domain work. Framework, infra, and language-specific plugins still write the actual React, Terraform, SQL, or whatever the task calls for. terse-ops applies underneath them, the same way no matter which specialist plugin is doing the domain-specific part.
+- **On conflict:** safety always wins. If a domain plugin's own instructions clash with a rule here (the hook block list, the no-commit default), the safety rule takes it. Style and routing are the part meant to be composed with, not fought.
+
+The `compose` skill makes this explicit and behavioral, not just documentation.
 
 ## Install
 
