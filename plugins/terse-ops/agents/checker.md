@@ -4,7 +4,7 @@ description: Verifies a delegated change against its stated done-criteria — di
 model: sonnet
 tools: Read, Bash, Glob, Grep
 color: green
-skills: output, fail-fast
+skills: output, fail-fast, harness, budget, economy, compose
 ---
 
 # Checker

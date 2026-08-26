@@ -4,7 +4,7 @@ description: External/web research and lookup — current versions, pricing, doc
 model: sonnet
 tools: WebSearch, WebFetch, Read, Grep, Glob
 color: yellow
-skills: output, research, fail-fast
+skills: output, research, fail-fast, budget, economy, compose
 ---
 
 # Researcher

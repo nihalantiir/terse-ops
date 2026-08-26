@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 - 2026-08-26
+
+- Fixed a real cross-segment false-positive bug in both hook scripts: every pattern check previously scanned the *entire* raw command line, so a compound command (`&&`/`;`/`|`) could trip a rule meant for a completely different clause (e.g. `git log && echo "committed"` blocked as a commit attempt). All checks now run per-segment.
+- Fixed three long-flag substring false positives found via testing: `git branch --set-upstream-to=origin/DEV`, `git clean --exclude=foo.log`, and `rm --preserve-root --one-file-system` were each incorrectly blocked because a long flag's own argument text happened to contain a trigger letter.
+- Narrowed `kubectl delete` to allow plain pod deletes (a controller reschedules them — closer to a restart than a deletion) while still blocking everything else; `--all-namespaces` still blocks even for pods.
+- Added `compose` skill: how terse-ops behaves alongside domain-specific plugins — it owns voice/routing/safety/spend, never the domain work; safety rules win on conflict.
+- Preloaded `budget`, `economy`, and `compose` onto all 5 agents' `skills:` frontmatter (previously only `output`/`harness`/`fail-fast`/`research` were preloaded — the others were still technically discoverable via the Skill tool, but not guaranteed in context at agent startup).
+- Tagged as `terse-ops--v0.6.0`.
+
 ## 0.5.0 - 2026-08-26
 
 - Added `/terse-ops:status` — reports current phase, anything the harness hook has blocked this session, and open items, read from the conversation itself

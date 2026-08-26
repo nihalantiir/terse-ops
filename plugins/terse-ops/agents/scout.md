@@ -4,7 +4,7 @@ description: Fast, cheap, read-only code search and lookup. Locates files by pat
 model: haiku
 tools: Glob, Grep, Read
 color: cyan
-skills: output
+skills: output, economy, compose
 ---
 
 # Scout

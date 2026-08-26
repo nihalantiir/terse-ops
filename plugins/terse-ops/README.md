@@ -29,6 +29,7 @@ Auto-triggered, based on the skill's description matching the task:
 | `budget` | Never trigger metered/billed/out-of-session usage (cloud runs, scheduled jobs, ultra reviews, paid APIs) on your own initiative — session usage is the default lane. |
 | `economy` | Keep tool-call and delegation overhead proportional to the task — no subagent spawns, plans, or re-reads a task doesn't need. |
 | `reasoning` | Use `effort: low/medium` only on genuinely simple, fixed-shape tasks; never to cut corners on real reasoning. Effort controls thinking depth, not reply length — that's still `output`'s job. |
+| `compose` | How terse-ops behaves alongside domain-specific plugins/skills — it owns voice/routing/safety/spend, never the domain work; safety rules win on any real conflict. |
 
 Explicit-only (never auto-triggered — invoke by name when you want the behavior on demand):
 
@@ -64,10 +65,12 @@ A `PreToolUse` hook backs the hard rules in `harness` with an actual block, not 
 - `rm -rf` (any flag ordering/combination)
 - `--no-verify` / `--no-gpg-sign`
 - `terraform destroy`
-- `kubectl delete`
+- `kubectl delete` — except a plain `pod`/`pods`/`po` delete, which a controller reschedules anyway; `--all-namespaces` still blocks even for pods
 - a raw `DROP TABLE`
 
 Shipped as two hook entries so the block still runs without Git Bash/WSL: `block-dangerous.sh` (POSIX `sh`, no bashisms) and `block-dangerous.ps1` (Windows `powershell.exe`, which ships with every Windows install). Both run on every Bash call; whichever interpreter exists on the machine does the blocking — the other fails to launch and is a silent no-op, which is expected, not a bug.
+
+Every check runs per-segment, scoped to one logical command split on `;`/`&`/`|` — not against the whole raw compound line. A command spanning `&&`/`;`/`|` can't trip a rule meant for a different clause (e.g. `git log && echo "committed"` no longer false-positives the commit block just because both words appear somewhere on the line). Quoting isn't understood, which is a known, accepted gap.
 
 ## Evals
 

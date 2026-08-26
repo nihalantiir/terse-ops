@@ -4,7 +4,7 @@ description: Implements a well-specified, mechanical change — apply a describe
 model: sonnet
 tools: Read, Edit, Write, Glob, Grep, Bash
 color: blue
-skills: output, harness, fail-fast
+skills: output, harness, fail-fast, budget, economy, compose
 ---
 
 # Builder

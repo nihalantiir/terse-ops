@@ -4,7 +4,7 @@ description: Structures an ambiguous or architecturally significant problem into
 model: opus
 tools: Read, Glob, Grep, Bash
 color: purple
-skills: output, harness
+skills: output, harness, economy, compose
 ---
 
 # Architect

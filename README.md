@@ -8,7 +8,7 @@ Not related to TERSE state language, TerseAI workflows, or be-terse hooks — th
 
 ## Role of terse-ops
 
-This governs *how* Claude works — voice, routing, spend limits, and repo safety. It doesn't own domain work: framework, infra, and language-specific plugins still do the actual React, Terraform, SQL, or whatever the task calls for. terse-ops just applies underneath them — output stays terse, destructive commands still get the hook, delegation still routes by cost — the same way regardless of which specialist plugin is doing the domain-specific part. If a domain plugin's own instructions conflict with a safety rule here (the hook block list, the no-commit default), the safety rule wins; style and routing rules are the part meant to be composed with, not fought.
+This governs *how* Claude works — voice, routing, spend limits, and repo safety. It doesn't own domain work: framework, infra, and language-specific plugins still do the actual React, Terraform, SQL, or whatever the task calls for. terse-ops just applies underneath them — output stays terse, destructive commands still get the hook, delegation still routes by cost — the same way regardless of which specialist plugin is doing the domain-specific part. If a domain plugin's own instructions conflict with a safety rule here (the hook block list, the no-commit default), the safety rule wins; style and routing rules are the part meant to be composed with, not fought. The `compose` skill is this rule made explicit and behavioral, not just documentation.
 
 ## Install
 
@@ -34,7 +34,7 @@ In the web app, the same actions live under `/plugin` → **Marketplaces** tab (
 
 This marketplace currently ships one plugin: [`terse-ops`](plugins/terse-ops/README.md), which adds:
 
-- **Skills** — behavioral rules for output style, orchestration/routing, delegate verification, a damage harness, auto-mode discipline, fail-fast reporting, verified (not stale-recalled) research, spend/usage-tier limits, tool-call economy, and reasoning-effort discipline
+- **Skills** — behavioral rules for output style, orchestration/routing, delegate verification, a damage harness, auto-mode discipline, fail-fast reporting, verified (not stale-recalled) research, spend/usage-tier limits, tool-call economy, reasoning-effort discipline, and composing safely with domain-specific plugins
 - **Commands** — `/terse-ops:route`, `/terse-ops:verify-now`, and `/terse-ops:status`, for forcing a routing decision, a verification pass, or a session-state report on demand instead of waiting on auto-trigger
 - **Agents** — `scout`, `researcher`, `builder`, `checker`, and `architect`: matched-cost subagents for codebase search, web research, mechanical implementation, verification, and a deep-reasoning planning pass, so the orchestrator isn't doing every step itself at top-model cost
 - **Hooks** — a `PreToolUse` guard that blocks the harness skill's hard "never" list (commits on your behalf, force-push, `--no-verify`, `rm -rf`, `reset --hard`, `branch -D`, `clean -f`) at the tool-call level, not just as a prompt instruction
