@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0 - 2026-08-26
+
+- Tagged as `terse-ops--v0.8.0`.
+- Fixed the "Updating" instructions in both READMEs: the documented flow said to follow `/plugin marketplace update` with a `/plugin install` reinstall, but marketplace update already bumps the installed plugin on its own. The correct path is `/plugin marketplace update` then `/reload-plugins` (or a restart) if one is needed.
+- Fixed `LICENSE`: it had a stray markdown heading and an unclosed code fence wrapped around the actual license text, a copy-paste artifact. Now plain MIT license text.
+- Root README: replaced the "not related to X/Y/Z" disclaimer with a direct product description, removed em dashes throughout for plainer prose, and added a custom SVG banner (`docs/banner.svg`) plus shields.io badges for license, latest tag, open issues, and Claude Code plugin status.
+
 ## 0.8.0 - 2026-08-26
 
 - Tagged as `terse-ops--v0.7.0`.

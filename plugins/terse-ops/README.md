@@ -11,7 +11,7 @@ The orchestrator (your top-tier model) plans, delegates, and verifies. Cheaper s
 /plugin install terse-ops@terse-ops
 ```
 
-To update later (CLI or the claude.ai/code web app — same commands in both): `/plugin marketplace update terse-ops` then `/plugin install terse-ops@terse-ops`. See the [marketplace README](../../README.md#updating) for the full flow.
+To update later (CLI or the claude.ai/code web app, same command in both): `/plugin marketplace update terse-ops`, then `/reload-plugins` (or restart) if it says a reload is needed. See the [marketplace README](../../README.md#updating) for the full flow.
 
 ## Skills
 
