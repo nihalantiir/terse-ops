@@ -65,7 +65,8 @@ This marketplace currently ships one plugin: [`terse-ops`](plugins/terse-ops/REA
 - **Commands**: `/terse-ops:route`, `/terse-ops:verify-now`, `/terse-ops:status`, `/terse-ops:mode`, `/terse-ops:solo`, `/terse-ops:allow`, plus one `/terse-ops:<name>` per on-demand skill above
 - **Agents**: `scout`, `researcher`, `builder`, `checker`, and `architect`. Matched-cost subagents for codebase search, web research, mechanical implementation, verification, and a deep-reasoning planning pass, so the orchestrator isn't doing every step itself at top-model cost
 - **Hooks**: a `PreToolUse` guard that blocks the harness skill's hard "never" list (commits on your behalf, force-push, `--no-verify`, `rm -rf`, `reset --hard`, `branch -D`, `clean -f`, `terraform destroy`, `kubectl delete`, `DROP TABLE`) at the tool-call level, not just as a prompt instruction. Most carry a scoped one-shot override or a standing, per-repo allow granted via `/terse-ops:allow`; `--no-verify`/`--no-gpg-sign` never has either
-- **Evals**: `claude plugin eval` cases covering the hook blocks and output brevity (early access, not yet runnable, see `plugins/terse-ops/evals/README.md`)
+- **Tests**: a 46-case, ungated shell/PowerShell suite asserting the hook's allow/block decisions, running in CI on every push (`.github/workflows/hook-tests.yml`)
+- **Evals**: `claude plugin eval` cases covering the same hook blocks and output brevity at the agent-behavior level (early access, not yet runnable, see `plugins/terse-ops/evals/README.md`)
 
 See the [plugin README](plugins/terse-ops/README.md) for the full breakdown of each skill and agent.
 

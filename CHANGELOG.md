@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0 - 2026-08-26
+
+- Tagged as `terse-ops--v0.12.0`.
+- First stable release. What that means concretely: hook-enforced safety with both a one-shot override and a durable, per-repo standing allow (`/terse-ops:allow`); 46 ungated, CI-verified hook test cases plus a parity check between the two hand-synced interpreters; a manifest-validation CI job; a published wiki (9 pages, footer, two architecture/decision diagrams) alongside both READMEs; and no known open bugs, only documented, deliberate trade-offs (see the READMEs' "Known limitations" and the wiki's Known Limitations page).
+- Final consistency pass: both READMEs and the wiki now reflect the 46-case suite, the `validate`/`parity` CI jobs, and the standing-allow's session-root scoping gap discovered while shipping 0.11.0/0.12.0. Root README gained a `tests/` bullet that was missing (only `evals/` was listed before, despite `tests/` being the suite that actually runs).
+- No functional changes beyond the consistency pass above — this release is about the state being verified and documented as stable, not new behavior.
+
 ## 0.12.0 - 2026-08-26
 
 - Tagged as `terse-ops--v0.11.0`.
