@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0 - 2026-08-27
+
+- `harness`: added a hard, unconditional rule against ever adding a `Co-Authored-By` (or any AI-attribution) trailer to a commit message, in any repo — overriding Claude Code's own default commit-workflow instruction. Added after the 1.2.0 release commit shipped with one anyway; that commit was amended, force-pushed, and the tag/release repointed to the corrected SHA.
+- Ran the whole repo's own hook/test scripts (the only files `code-comments`/`flag-comments` actually govern) back through the new skill: no changes needed, they already held to the rule.
+- Root README banner (`docs/banner.svg`) redrawn: dropped the terminal-window chrome, tagline, and bottom accent bar in favor of a plain dark gradient plus a single sparkle mark and the wordmark, closer to the minimal style used in `simple-vk`'s own banner.
+- Wiki: documented `code-comments` and `flag-comments` across Skills Reference (13 skills now, 6 always-on), Hooks and Safety (the nudge is `PostToolUse`, never blocks), Known Limitations (the heuristic's phrase-list scope), Testing (55 cases), Home, and Agents Reference.
+
 ## 1.2.0 - 2026-08-27
 
 - Added `code-comments`: a new always-on skill (no `disable-model-invocation`) closing a real gap found using the plugin on a real project — none of the existing skills governed what gets written *inside* files, and the system prompt's own "no comments unless non-obvious why" default lost out to task context often enough that a real session opened its first pass with narrative class blurbs ("Owns the X... every other Y is built on top of this...") until told explicitly to stop. `code-comments` states the rule set directly: no restating what code does, no class/function-role narration, no referencing this task/session in a comment, keep only genuinely non-obvious why.
