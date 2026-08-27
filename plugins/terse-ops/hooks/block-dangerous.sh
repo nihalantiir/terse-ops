@@ -121,6 +121,31 @@ check_segment() {
         category_allowed commit || deny "terse-ops harness: git commit is blocked. Default rule is never commit on the user's behalf — stage the change and ask them to commit it. If they just explicitly asked you to commit it yourself this turn, prefix the command with TERSE_OPS_COMMIT_OK=1 (see harness) — don't reuse that prefix on a later commit without asking again. Or run \`/terse-ops:allow commit\` so this repo stops asking every time."
         ;;
     esac
+
+    # -F/--file reads the message from a file the AI-attribution check
+    # above never sees -- it only scans the command-line text itself, so a
+    # trailer living in that file's body would otherwise slip past
+    # silently. Only checked here, inside is_commit_cmd, so an unrelated
+    # command's own -F flag (e.g. grep -F) isn't misread as a commit
+    # message file.
+    file_arg=""
+    prev_tok=""
+    for tok in $seg; do
+      case "$prev_tok" in
+        -F|--file) file_arg="$tok" ;;
+      esac
+      case "$tok" in
+        --file=*) file_arg="${tok#--file=}" ;;
+      esac
+      prev_tok="$tok"
+    done
+    if [ -n "$file_arg" ] && [ -f "$file_arg" ]; then
+      file_lc="$(tr '[:upper:]' '[:lower:]' <"$file_arg" 2>/dev/null)"
+      case "$file_lc" in
+        *co-authored-by*claude*|*co-authored-by*anthropic*|*generated-by*claude*|*generated-by*anthropic*|*signed-off-by*claude*|*signed-off-by*anthropic*|*noreply@anthropic.com*)
+          deny "terse-ops harness: the commit message file passed via -F/--file contains an AI-attribution trailer naming Claude or Anthropic (or noreply@anthropic.com). Blocked, no override, ever." ;;
+      esac
+    fi
   fi
 
   case "$seg" in

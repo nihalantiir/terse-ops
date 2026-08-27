@@ -128,6 +128,18 @@ run_case ALLOW "co-authored-by naming a human is fine" 'TERSE_OPS_COMMIT_OK=1 gi
 run_case ALLOW "signed-off-by human DCO sign-off is fine" 'TERSE_OPS_COMMIT_OK=1 git commit -m "fix bug\n\nSigned-off-by: Jane Doe <jane@example.com>"'
 run_case BLOCK "no override defeats AI-attribution trailer" 'TERSE_OPS_DANGER_OK=1 git commit -m "fix\n\nCo-Authored-By: Claude <noreply@anthropic.com>"'
 
+# -F/--file: the trailer can live in the message file's body, not the
+# command-line text at all -- prove that's scanned too, not just -m.
+msgfile_tmp="$(mktemp -d)"
+msgfile_claude="$msgfile_tmp/claude.txt"
+msgfile_human="$msgfile_tmp/human.txt"
+printf 'fix bug\n\nCo-Authored-By: Claude <noreply@anthropic.com>\n' >"$msgfile_claude"
+printf 'fix bug\n\nCo-Authored-By: Jane Doe <jane@example.com>\n' >"$msgfile_human"
+run_case BLOCK "commit -F file body names Claude"            "git commit -F $msgfile_claude"
+run_case BLOCK "commit --file=<file> long form also scanned" "git commit --file=$msgfile_claude"
+run_case ALLOW "commit -F file body, human co-author is fine" "TERSE_OPS_COMMIT_OK=1 git commit -F $msgfile_human"
+rm -rf "$msgfile_tmp"
+
 # --- allowed: known false-positive traps the harness must not trip on ---
 run_case ALLOW "plain git log"                        'git log'
 run_case ALLOW "commit word in unrelated segment"     'git log && echo "committed"'

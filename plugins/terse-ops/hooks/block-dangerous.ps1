@@ -95,6 +95,34 @@ function Check-Segment($seg) {
         Deny "terse-ops harness: git commit is blocked. Default rule is never commit on the user's behalf -- stage the change and ask them to commit it. If they just explicitly asked you to commit it yourself this turn, prefix the command with TERSE_OPS_COMMIT_OK=1 (see harness) -- don't reuse that prefix on a later commit without asking again. Or run ``/terse-ops:allow commit`` so this repo stops asking every time."
     }
 
+    # -F/--file reads the message from a file the AI-attribution check
+    # above never sees -- it only scans the command-line text itself, so a
+    # trailer living in that file's body would otherwise slip past
+    # silently. Only checked here, inside $isCommit, so an unrelated
+    # command's own -F flag (e.g. grep -F) isn't misread as a commit
+    # message file.
+    if ($isCommit) {
+        $fileArg = $null
+        $prevTok = $null
+        foreach ($tok in ($seg -split '\s+')) {
+            if ($prevTok -eq '-F' -or $prevTok -eq '--file') { $fileArg = $tok }
+            if ($tok -like '--file=*') { $fileArg = $tok.Substring(7) }
+            $prevTok = $tok
+        }
+        if ($fileArg -and (Test-Path -LiteralPath $fileArg -PathType Leaf)) {
+            $fileContent = Get-Content -Raw -ErrorAction SilentlyContinue -LiteralPath $fileArg
+            if ($fileContent) {
+                $fileLc = $fileContent.ToLowerInvariant()
+                if (($fileLc -like '*co-authored-by*claude*') -or ($fileLc -like '*co-authored-by*anthropic*') -or `
+                    ($fileLc -like '*generated-by*claude*') -or ($fileLc -like '*generated-by*anthropic*') -or `
+                    ($fileLc -like '*signed-off-by*claude*') -or ($fileLc -like '*signed-off-by*anthropic*') -or `
+                    ($fileLc -like '*noreply@anthropic.com*')) {
+                    Deny "terse-ops harness: the commit message file passed via -F/--file contains an AI-attribution trailer naming Claude or Anthropic (or noreply@anthropic.com). Blocked, no override, ever."
+                }
+            }
+        }
+    }
+
     if (($seg -like '*git *push*--force*') -or ($seg -like '*git *push* -f *') -or ($seg -like '*git *push* -f')) {
         Deny-Overridable "terse-ops harness: force-push is blocked. Confirm with the user and have them run it, or get explicit sign-off first -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg 'force-push'
     }

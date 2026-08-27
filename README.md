@@ -1,13 +1,15 @@
+# terse-ops
+
+---
+
 <p align="center">
   <img src="docs/banner.svg" alt="terse-ops" width="100%">
 </p>
 
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/nihalantiir/terse-ops" alt="License"></a>
-  <a href="https://github.com/nihalantiir/terse-ops/tags"><img src="https://img.shields.io/github/v/tag/nihalantiir/terse-ops?label=version&sort=semver" alt="Latest version"></a>
-  <a href="https://github.com/nihalantiir/terse-ops/issues"><img src="https://img.shields.io/github/issues/nihalantiir/terse-ops" alt="Open issues"></a>
-  <a href="https://docs.claude.com/en/docs/claude-code/plugins"><img src="https://img.shields.io/badge/Claude_Code-plugin-d97757" alt="Claude Code plugin"></a>
-</p>
+[![License](https://img.shields.io/github/license/nihalantiir/terse-ops)](LICENSE)
+[![Latest version](https://img.shields.io/github/v/tag/nihalantiir/terse-ops?label=version&sort=semver)](https://github.com/nihalantiir/terse-ops/tags)
+[![Open issues](https://img.shields.io/github/issues/nihalantiir/terse-ops)](https://github.com/nihalantiir/terse-ops/issues)
+[![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-d97757)](https://docs.claude.com/en/docs/claude-code/plugins)
 
 A Claude Code plugin marketplace for concise, disciplined, cost-aware agentic work.
 
@@ -52,7 +54,7 @@ This marketplace currently ships one plugin: [`terse-ops`](plugins/terse-ops/REA
 - **Commands**: `/terse-ops:route`, `/terse-ops:verify-now`, `/terse-ops:status`, `/terse-ops:mode`, `/terse-ops:solo`, `/terse-ops:allow`, plus one `/terse-ops:<name>` per on-demand skill above
 - **Agents**: `scout`, `researcher`, `builder`, `checker`, and `architect`. Matched-cost subagents for codebase search, web research, mechanical implementation, verification, and a deep-reasoning planning pass, so the orchestrator isn't doing every step itself at top-model cost
 - **Hooks**: a `PreToolUse` guard that blocks the harness skill's hard "never" list (commits on your behalf, force-push, `--no-verify`, `rm -rf`, `reset --hard`, `branch -D`, `clean -f`, `terraform destroy`, `kubectl delete`, `DROP TABLE`) at the tool-call level, not just as a prompt instruction. Most carry a scoped one-shot override or a standing, per-repo allow granted via `/terse-ops:allow`; `--no-verify`/`--no-gpg-sign` and an AI-attribution commit trailer (`Co-Authored-By`/`Generated-By`/`Signed-off-by` naming Claude or Anthropic) never have either. A second, non-blocking `PostToolUse` hook nudges on narrative-comment phrasing in any `Edit`/`Write` to a source file, backing the `code-comments` skill
-- **Tests**: a 63-case, ungated shell/PowerShell suite asserting both hooks' decisions, running in CI on every push (`.github/workflows/hook-tests.yml`)
+- **Tests**: a 66-case, ungated shell/PowerShell suite asserting both hooks' decisions, running in CI on every push (`.github/workflows/hook-tests.yml`)
 - **Evals**: `claude plugin eval` cases covering the same hook blocks and output brevity at the agent-behavior level (early access, not yet runnable, see `plugins/terse-ops/evals/README.md`)
 
 See the [plugin README](plugins/terse-ops/README.md) for the full breakdown of each skill and agent, or the [wiki](https://github.com/nihalantiir/terse-ops/wiki) for the deep reference — including the [Prompt Guide](https://github.com/nihalantiir/terse-ops/wiki/Prompt-Guide) for making plain language trigger the on-demand skills instead of typing the exact command.

@@ -112,6 +112,19 @@ Invoke-Case ALLOW "co-authored-by naming a human is fine" 'TERSE_OPS_COMMIT_OK=1
 Invoke-Case ALLOW "signed-off-by human DCO sign-off is fine" 'TERSE_OPS_COMMIT_OK=1 git commit -m "fix bug\n\nSigned-off-by: Jane Doe <jane@example.com>"'
 Invoke-Case BLOCK "no override defeats AI-attribution trailer" 'TERSE_OPS_DANGER_OK=1 git commit -m "fix\n\nCo-Authored-By: Claude <noreply@anthropic.com>"'
 
+# -F/--file: the trailer can live in the message file's body, not the
+# command-line text at all -- prove that's scanned too, not just -m.
+$msgfileTmp = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
+New-Item -ItemType Directory -Path $msgfileTmp | Out-Null
+$msgfileClaude = Join-Path $msgfileTmp 'claude.txt'
+$msgfileHuman = Join-Path $msgfileTmp 'human.txt'
+Set-Content -Path $msgfileClaude -Value "fix bug`n`nCo-Authored-By: Claude <noreply@anthropic.com>"
+Set-Content -Path $msgfileHuman -Value "fix bug`n`nCo-Authored-By: Jane Doe <jane@example.com>"
+Invoke-Case BLOCK "commit -F file body names Claude"            "git commit -F $msgfileClaude"
+Invoke-Case BLOCK "commit --file=<file> long form also scanned" "git commit --file=$msgfileClaude"
+Invoke-Case ALLOW "commit -F file body, human co-author is fine" "TERSE_OPS_COMMIT_OK=1 git commit -F $msgfileHuman"
+Remove-Item -Recurse -Force $msgfileTmp
+
 # --- allowed: known false-positive traps the harness must not trip on ---
 Invoke-Case ALLOW "plain git log"                       'git log'
 Invoke-Case ALLOW "commit word in unrelated segment"    'git log && echo "committed"'

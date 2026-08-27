@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0 - 2026-08-27
+
+- Closed the `git commit -F <file>`/`--file=<file>` bypass in the AI-attribution check: the command-line text alone never contains a message that was read from a file, so a trailer living in that file's body slipped past 1.4.0's check entirely. `block-dangerous.sh`/`.ps1` now also read that file's content when the segment is already a recognized commit and the referenced path is a real file. 3 new test cases (66 total): file body naming Claude blocked via both `-F` and `--file=`, a human co-author in the file left alone.
+- Wiki: fixed the "two ways to override" sentence under the hook block-list table, it still named only `--no-verify`/`--no-gpg-sign` as absolute even after the AI-attribution row was added above it. Documented the new `-F`/`--file` file-scanning coverage. Re-verified Home/Skills Reference are current (6 always-on, Prompt Guide listed) — a report that they still read the old 11/5 numbers turned out to be a stale cached view, not a live discrepancy.
+- Root README: added a top `# terse-ops` headline and separator above the banner, and switched the badge row from centered HTML to left-aligned plain-markdown badges, matching `simple-vk`'s own README structure.
+- Both READMEs' hook-table override sentence and test-case counts (66) brought current.
+
 ## 1.4.0 - 2026-08-27
 
 - Hook, not just skill: `block-dangerous.sh`/`.ps1` now block any commit whose message carries an AI-attribution trailer (`Co-Authored-By`/`Generated-By`/`Signed-off-by` naming Claude or Anthropic, or the literal `noreply@anthropic.com` address), absolute, no override, same class as `--no-verify`. The check is unconditional per segment rather than gated on `git commit` appearing in the same one, so a multi-line heredoc-built message's trailer line is still caught even when it lands in a different segment than the invocation. A human co-author or a real DCO sign-off is left alone. 7 new test cases (4 block, 2 false-positive-trap allows, 1 no-override proof).
