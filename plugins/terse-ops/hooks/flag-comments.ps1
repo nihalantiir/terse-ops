@@ -41,7 +41,8 @@ $lc = $raw.ToLowerInvariant()
 
 $phrases = @('responsible for', 'wrapper around', 'owns the', 'used by the', `
     'added this to fix', 'added to fix', 'this fixes', 'this handles', `
-    'this adds support', 'handles the case', 'helper function to', 'helper to')
+    'this adds support', 'handles the case', 'helper function to', 'helper to', `
+    'manages the', 'this class manages', 'this module manages')
 
 $flagged = @()
 foreach ($phrase in $phrases) {

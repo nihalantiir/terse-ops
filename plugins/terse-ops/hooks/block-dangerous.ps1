@@ -71,6 +71,21 @@ try {
 }
 
 function Check-Segment($seg) {
+    # AI-attribution commit trailer (Co-Authored-By/Generated-By/Signed-off-by
+    # naming Claude or Anthropic, or the literal noreply@anthropic.com
+    # address) has NO override, ever -- same class as --no-verify below.
+    # Unconditional, not gated on "git commit" appearing in this same
+    # segment: a multi-line message built via `$(cat <<'EOF' ... EOF)` puts
+    # each body line in its own segment (real newlines split the same as
+    # `;`/`&`/`|` here), so the trailer line is often not in the same
+    # segment as the invocation itself. -like is case-insensitive already.
+    if (($seg -like '*co-authored-by*claude*') -or ($seg -like '*co-authored-by*anthropic*') -or `
+        ($seg -like '*generated-by*claude*') -or ($seg -like '*generated-by*anthropic*') -or `
+        ($seg -like '*signed-off-by*claude*') -or ($seg -like '*signed-off-by*anthropic*') -or `
+        ($seg -like '*noreply@anthropic.com*')) {
+        Deny "terse-ops harness: an AI-attribution commit trailer (Co-Authored-By/Generated-By/Signed-off-by naming Claude or Anthropic, or noreply@anthropic.com) is blocked. Never attribute a commit to Claude/Anthropic, in any repo. This has no override, ever."
+    }
+
     # Default is never commit on the user's behalf. Two ways through: the
     # one-shot marker (the user just explicitly asked, this turn, for the
     # commit itself) or a standing per-repo allow for "commit" (see

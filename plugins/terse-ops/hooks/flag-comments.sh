@@ -54,7 +54,8 @@ lc="$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')"
 flagged=""
 for phrase in "responsible for" "wrapper around" "owns the" "used by the" \
   "added this to fix" "added to fix" "this fixes" "this handles" \
-  "this adds support" "handles the case" "helper function to" "helper to"; do
+  "this adds support" "handles the case" "helper function to" "helper to" \
+  "manages the" "this class manages" "this module manages"; do
   case "$lc" in
     *"$phrase"*) flagged="$flagged$phrase; " ;;
   esac

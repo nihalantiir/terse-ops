@@ -91,6 +91,20 @@ segments="$(printf '%s' "$cmd" | tr ';&|' '\n\n\n')"
 
 check_segment() {
   seg="$1"
+  lc_seg="$(printf '%s' "$seg" | tr '[:upper:]' '[:lower:]')"
+
+  # AI-attribution commit trailer (Co-Authored-By/Generated-By/Signed-off-by
+  # naming Claude or Anthropic, or the literal noreply@anthropic.com
+  # address) has NO override, ever -- same class as --no-verify below.
+  # Unconditional, not gated on "git commit" appearing in this same
+  # segment: a multi-line message built via `$(cat <<'EOF' ... EOF)` puts
+  # each body line in its own segment (real newlines split the same as
+  # `;`/`&`/`|` here, see the segment-splitting note further down), so the
+  # trailer line is often not in the same segment as the invocation itself.
+  case "$lc_seg" in
+    *co-authored-by*claude*|*co-authored-by*anthropic*|*generated-by*claude*|*generated-by*anthropic*|*signed-off-by*claude*|*signed-off-by*anthropic*|*noreply@anthropic.com*)
+      deny "terse-ops harness: an AI-attribution commit trailer (Co-Authored-By/Generated-By/Signed-off-by naming Claude or Anthropic, or noreply@anthropic.com) is blocked. Never attribute a commit to Claude/Anthropic, in any repo. This has no override, ever." ;;
+  esac
 
   # Default is never commit on the user's behalf. Two ways through: the
   # one-shot marker (the user just explicitly asked, this turn, for the
@@ -174,7 +188,7 @@ check_segment() {
   esac
 
   # Case-insensitive: SQL keywords vary in case, unlike the CLI flags above.
-  lc_seg="$(printf '%s' "$seg" | tr '[:upper:]' '[:lower:]')"
+  # (lc_seg already computed at the top of this function.)
   case "$lc_seg" in
     *drop\ table*)
       overridable_deny "terse-ops harness: a raw DROP TABLE is blocked. Dropping a table is destructive and usually irreversible — confirm with the user before running it — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." drop-table ;;

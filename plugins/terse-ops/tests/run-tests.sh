@@ -119,6 +119,15 @@ run_case BLOCK "drop table lowercase"                 'psql -c "drop table users
 run_case BLOCK "--no-verify"                          'git commit -m "x" --no-verify'
 run_case BLOCK "--no-gpg-sign"                        'git commit -m "x" --no-gpg-sign'
 
+# --- AI-attribution commit trailer: absolute, no override, same class as --no-verify ---
+run_case BLOCK "co-authored-by naming Claude"         'git commit -m "fix bug\n\nCo-Authored-By: Claude <noreply@anthropic.com>"'
+run_case BLOCK "generated-by naming Claude"           'git commit -m "fix bug\n\nGenerated-By: Claude"'
+run_case BLOCK "signed-off-by naming Anthropic"       'git commit -m "fix bug\n\nSigned-off-by: Anthropic Bot <bot@anthropic.com>"'
+run_case BLOCK "bare noreply@anthropic.com address, no trailer-key match" 'git commit -m "fix bug\n\nCo-Author: X <noreply@anthropic.com>"'
+run_case ALLOW "co-authored-by naming a human is fine" 'TERSE_OPS_COMMIT_OK=1 git commit -m "fix bug\n\nCo-Authored-By: Jane Doe <jane@example.com>"'
+run_case ALLOW "signed-off-by human DCO sign-off is fine" 'TERSE_OPS_COMMIT_OK=1 git commit -m "fix bug\n\nSigned-off-by: Jane Doe <jane@example.com>"'
+run_case BLOCK "no override defeats AI-attribution trailer" 'TERSE_OPS_DANGER_OK=1 git commit -m "fix\n\nCo-Authored-By: Claude <noreply@anthropic.com>"'
+
 # --- allowed: known false-positive traps the harness must not trip on ---
 run_case ALLOW "plain git log"                        'git log'
 run_case ALLOW "commit word in unrelated segment"     'git log && echo "committed"'
@@ -203,6 +212,7 @@ run_comment_case FLAG  "Edit, session-narration comment"          Edit  "src/foo
 run_comment_case FLAG  "Edit, wrapper-around phrasing"            Edit  "scripts/deploy.ps1" "# thin wrapper around the deploy API"
 run_comment_case FLAG  "Write, used-by-the-flow phrasing"         Write "src/util.ts"      "// used by the checkout flow"
 run_comment_case FLAG  "Edit, helper-function-to phrasing"        Edit  "lib/helpers.rb"   "# helper function to format currency"
+run_comment_case FLAG  "Write, class-manages narration"           Write "src/pool.py"      "# This class manages the connection pool"
 run_comment_case CLEAN "Write, plain code, no narrative phrase"   Write "src/add.go"       "func Add(a, b int) int { return a + b }"
 run_comment_case CLEAN "Edit, genuine non-obvious why"            Edit  "src/retry.py"     "# retry once: upstream API is flaky under load per INC-4021"
 run_comment_case CLEAN "Write, narrative phrase but non-source ext (md)" Write "README.md" "this class is responsible for things"

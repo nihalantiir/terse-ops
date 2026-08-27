@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0 - 2026-08-27
+
+- Hook, not just skill: `block-dangerous.sh`/`.ps1` now block any commit whose message carries an AI-attribution trailer (`Co-Authored-By`/`Generated-By`/`Signed-off-by` naming Claude or Anthropic, or the literal `noreply@anthropic.com` address), absolute, no override, same class as `--no-verify`. The check is unconditional per segment rather than gated on `git commit` appearing in the same one, so a multi-line heredoc-built message's trailer line is still caught even when it lands in a different segment than the invocation. A human co-author or a real DCO sign-off is left alone. 7 new test cases (4 block, 2 false-positive-trap allows, 1 no-override proof).
+- `flag-comments`: added `manages the`/`this class manages`/`this module manages` to the narrative-phrase list, closing a real miss ("this class manages the connection pool" wasn't caught before). 1 new test case. `used by the` remains a known false-positive risk against legitimate technical usage notes (documented, not fixed, see wiki Known Limitations).
+- Plugin + root README: the hook table now shows the AI-attribution trailer as its own absolute row, distinct from `git commit`'s own overridable row, and both READMEs' test-case counts are current (63).
+- Wiki: documented the new hook check and the full `flag-comments` phrase list in Hooks and Safety, added the two concrete phrase-list misses/false-positives to Known Limitations, reworded the skill-count framing (12 behavioral skills plus `allow`, not folding `allow` into "13 total"), and added a "don't grow always-on further" note to Configuration.
+
 ## 1.3.0 - 2026-08-27
 
 - `harness`: added a hard, unconditional rule against ever adding a `Co-Authored-By` (or any AI-attribution) trailer to a commit message, in any repo — overriding Claude Code's own default commit-workflow instruction. Added after the 1.2.0 release commit shipped with one anyway; that commit was amended, force-pushed, and the tag/release repointed to the corrected SHA.

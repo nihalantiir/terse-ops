@@ -86,6 +86,9 @@ A `PreToolUse` hook backs the hard rules in `harness` with an actual block, not 
 | `kubectl delete` (a plain pod delete is always allowed, `--all-namespaces` still blocks) | Yes |
 | a raw `DROP TABLE` | Yes |
 | `--no-verify` / `--no-gpg-sign` | **Never** |
+| An AI-attribution commit trailer (`Co-Authored-By`/`Generated-By`/`Signed-off-by` naming Claude or Anthropic, or `noreply@anthropic.com`) | **Never** |
+
+`git commit` itself is overridable (the marker or a standing allow lets a plain commit through), but the row above is a separate, absolute check on the message content — naming Claude/Anthropic in an attribution trailer is blocked even on a commit that's otherwise allowed through.
 
 Two ways to override: a one-shot `TERSE_OPS_DANGER_OK=1`/`TERSE_OPS_COMMIT_OK=1` marker for a single, explicitly-asked-for command, or `/terse-ops:allow <category>` for a standing, per-repo allow (`/terse-ops:allow list`/`revoke <category|all>` to inspect or undo). `--no-verify`/`--no-gpg-sign` has no path through either, ever. Shipped as two hand-synced hook scripts (POSIX `sh` and PowerShell) so the block runs with or without Git Bash/WSL.
 
@@ -95,7 +98,7 @@ A second, non-blocking `PostToolUse` hook (`flag-comments.sh`/`.ps1`) backs `cod
 
 ## Tests and evals
 
-`tests/` has a plain shell/PowerShell test suite (55 cases as of this writing) that asserts `block-dangerous.sh`/`.ps1`'s exit code (allow/block) and `flag-comments.sh`/`.ps1`'s exit code (nudge/clean), including the known false-positive traps from past bugs and the full standing-allow grant/scope/revoke lifecycle. No gating, no API cost, runs in CI on every push (`.github/workflows/hook-tests.yml`'s `sh`/`powershell` jobs), plus a `validate` job (`claude plugin validate`) and a `parity` job asserting both suites report the same total.
+`tests/` has a plain shell/PowerShell test suite (63 cases as of this writing) that asserts `block-dangerous.sh`/`.ps1`'s exit code (allow/block) and `flag-comments.sh`/`.ps1`'s exit code (nudge/clean), including the known false-positive traps from past bugs, the AI-attribution trailer's absolute no-override block, and the full standing-allow grant/scope/revoke lifecycle. No gating, no API cost, runs in CI on every push (`.github/workflows/hook-tests.yml`'s `sh`/`powershell` jobs), plus a `validate` job (`claude plugin validate`) and a `parity` job asserting both suites report the same total.
 
 `evals/` has `claude plugin eval` cases covering the same hook blocks plus the `output` skill's brevity rule, but at the agent-behavior level (does the agent correctly report a block instead of retrying or claiming success). That feature is early access and gated per org, see `evals/README.md` for status.
 
