@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.0 - 2026-08-27
+
+- Ran a real, bounded token-savings pilot measurement instead of relying on the `economy`/`orchestrate` claims going unverified: 3 read-only tasks against this repo, run once with the plugin disabled and once enabled, comparing actual `total_cost_usd`/token counts from `claude -p --output-format json`. Result: 11.5% cheaper, 23% fewer turns overall — directionally positive, but a thin sample (one run per task, no subagent routing exercised), documented as a pilot, not a standing benchmark, in the new wiki [Token Savings](https://github.com/nihalantiir/terse-ops/wiki/Token-Savings) page.
+- Both READMEs and the wiki Home page now carry an explicit "actively developed, still beta" status note.
+
 ## 1.7.0 - 2026-08-27
 
 - Fixed a real, previously-unknown gap found by actually installing the plugin fresh and dogfooding it: `hooks.json`'s `PreToolUse` matcher was `Bash` only, so a model reaching for the separate `PowerShell` tool on Windows bypassed every rule on the block list entirely. In the dogfood session, asked to delete a file, the model used `Remove-Item`, not `rm -rf`, and nothing stopped it.

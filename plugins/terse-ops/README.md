@@ -4,6 +4,8 @@ Concise output, cost-aware orchestration, and safe edits for Claude Code.
 
 The orchestrator (your top-tier model) plans, delegates, and verifies. Cheaper subagents do the search and mechanical implementation. A hook enforces the hard safety rules so they don't depend on the model remembering a prompt.
 
+**Actively developed, still beta.** Skill wording, hook coverage, and defaults can change between releases — update often rather than assuming a given version's behavior is final.
+
 ## Install
 
 ```
@@ -101,6 +103,8 @@ A second, non-blocking `PostToolUse` hook (`flag-comments.sh`/`.ps1`) backs `cod
 `tests/` has a plain shell/PowerShell test suite (71 cases as of this writing) that asserts `block-dangerous.sh`/`.ps1`'s exit code (allow/block) and `flag-comments.sh`/`.ps1`'s exit code (nudge/clean), including the known false-positive traps from past bugs, the AI-attribution trailer's absolute no-override block (including inside a `git commit -F`/`--file=` message file, not just `-m`), PowerShell's own `Remove-Item`-style recursive-force delete, and the full standing-allow grant/scope/revoke lifecycle. No gating, no API cost, runs in CI on every push (`.github/workflows/hook-tests.yml`'s `sh`/`powershell` jobs), plus a `validate` job (`claude plugin validate`) and a `parity` job asserting both suites report the same total.
 
 `evals/` has `claude plugin eval` cases covering the same hook blocks plus the `output` skill's brevity rule, but at the agent-behavior level (does the agent correctly report a block instead of retrying or claiming success). That feature is early access and gated per org, see `evals/README.md` for status.
+
+A small, bounded pilot measurement found the plugin **11.5% cheaper and using 23% fewer turns** on 3 read-only tasks, real numbers from `claude -p --output-format json`, not estimates, though the sample is thin and didn't exercise subagent routing specifically. See the [marketplace README](../../README.md#measured-token-savings) or [wiki: Token Savings](https://github.com/nihalantiir/terse-ops/wiki/Token-Savings) for the full breakdown.
 
 ## Local development
 

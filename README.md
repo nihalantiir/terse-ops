@@ -13,7 +13,9 @@ A Claude Code plugin marketplace for concise, disciplined, cost-aware agentic wo
 
 The top model plans, delegates, and verifies. Cheaper models do the mechanical labor beneath it. A hook-enforced damage harness limits blast radius. Failures get reported once, not researched forever.
 
-**Contents:** [Role of terse-ops](#role-of-terse-ops) · [Install](#install) · [Updating](#updating) · [What's in it](#whats-in-it) · [License](#license) · [Wiki](https://github.com/nihalantiir/terse-ops/wiki)
+**Actively developed, still beta.** Skill wording, hook coverage, and defaults can change between releases — update often (see [Updating](#updating)) rather than assuming a given version's behavior is final.
+
+**Contents:** [Role of terse-ops](#role-of-terse-ops) · [Install](#install) · [Updating](#updating) · [What's in it](#whats-in-it) · [Measured token savings](#measured-token-savings) · [License](#license) · [Wiki](https://github.com/nihalantiir/terse-ops/wiki)
 
 ## Role of terse-ops
 
@@ -56,6 +58,17 @@ This marketplace currently ships one plugin: [`terse-ops`](plugins/terse-ops/REA
 - **Evals**: `claude plugin eval` cases covering the same hook blocks and output brevity at the agent-behavior level (early access, not yet runnable, see `plugins/terse-ops/evals/README.md`)
 
 See the [plugin README](plugins/terse-ops/README.md) for the full breakdown of each skill and agent, or the [wiki](https://github.com/nihalantiir/terse-ops/wiki) for the deep reference — including the [Prompt Guide](https://github.com/nihalantiir/terse-ops/wiki/Prompt-Guide) for making plain language trigger the on-demand skills instead of typing the exact command.
+
+## Measured token savings
+
+A small, bounded pilot measurement (not a rigorous benchmark): the same 3 read-only tasks against this repo, run once with the plugin disabled and once enabled, comparing real cost/token counts from `claude -p --output-format json`, not estimates.
+
+| | No terse-ops | With terse-ops |
+|---|---|---|
+| Total cost (3 tasks) | $0.2377 | $0.2105 (**−11.5%**) |
+| Total turns | 13 | 10 (**−23%**) |
+
+Directionally positive, but a thin sample — 3 tasks, one run each, no repeated trials, and none of the runs actually triggered subagent delegation, so this measures `output`'s brevity and tool-call efficiency, not `orchestrate`'s specific "route to a cheaper model" claim. Full per-task breakdown, methodology, and caveats: [wiki: Token Savings](https://github.com/nihalantiir/terse-ops/wiki/Token-Savings).
 
 ## License
 
