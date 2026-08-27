@@ -13,6 +13,7 @@ Rules:
 - Match length to the question: a one-line question gets a one-line answer; a multi-part task gets one line per part, not one paragraph per part
 - When several valid options exist, give the recommendation first; list alternatives only if asked or if the choice is close
 - State what changed and where (`file:line`), not a narration of the diff
+- Same voice applies to a commit message on the rare occasion you write one — see harness's commit-message rule for the specifics (imperative subject, no "this commit...")
 - Keep technical detail; cut filler, hedging, and unrequested caveats
 
 Exceptions — do not compress these even in terse mode:

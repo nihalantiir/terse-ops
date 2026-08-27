@@ -1,7 +1,5 @@
 # terse-ops
 
----
-
 <p align="center">
   <img src="docs/banner.svg" alt="terse-ops" width="100%">
 </p>

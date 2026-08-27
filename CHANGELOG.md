@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.0 - 2026-08-27
+
+- Root README: dropped the `---` separator between the `# terse-ops` headline and the banner — the H1 already separates, a rule under a title is extra chrome. Lean layout now: headline, banner, badges, one-paragraph pitch.
+- `harness`: added a terse commit-message rule for the one-shot commit exception — imperative subject (~50–72 chars), states what changed rather than narrating the session, a body only when the why isn't in the subject, no diff recap, no file-by-file laundry list unless genuinely multi-area. Style-only, skill-enforced, no hook behind it (the AI-attribution trailer stays the one hook-enforced part of commit messages). `output` cross-references it.
+
 ## 1.5.0 - 2026-08-27
 
 - Closed the `git commit -F <file>`/`--file=<file>` bypass in the AI-attribution check: the command-line text alone never contains a message that was read from a file, so a trailer living in that file's body slipped past 1.4.0's check entirely. `block-dangerous.sh`/`.ps1` now also read that file's content when the segment is already a recognized commit and the referenced path is a real file. 3 new test cases (66 total): file body naming Claude blocked via both `-F` and `--file=`, a human co-author in the file left alone.
