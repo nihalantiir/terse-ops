@@ -163,6 +163,55 @@ out="$(cd "$tmp" && printf '%s' "$payload" | sh "$HOOK" 2>&1)"
 record_result BLOCK "standing allow: revoke restores the block" 'git commit -m "wip"' "$?" "$out"
 rm -rf "$tmp"
 
+# --- flag-comments.sh: PostToolUse nudge on Edit/Write, never blocks the
+# tool itself (already ran by PostToolUse time) -- FLAG means exit 2
+# (nudge surfaced), CLEAN means exit 0 (no nudge). ---
+HOOK2="$ROOT/hooks/flag-comments.sh"
+
+run_comment_case() {
+  expect="$1"
+  desc="$2"
+  tool_name="$3"
+  file_path="$4"
+  text="$5"
+  field="content"
+  [ "$tool_name" = "Edit" ] && field="new_string"
+  fp_esc="$(json_escape "$file_path")"
+  text_esc="$(json_escape "$text")"
+  payload="{\"tool_name\":\"$tool_name\",\"tool_input\":{\"file_path\":\"$fp_esc\",\"$field\":\"$text_esc\"}}"
+  out="$(printf '%s' "$payload" | sh "$HOOK2" 2>&1)"
+  code=$?
+  if [ "$expect" = "FLAG" ]; then
+    if [ "$code" -eq 2 ]; then
+      pass=$((pass + 1))
+    else
+      fail=$((fail + 1))
+      printf 'FAIL [expected FLAG, got exit %s]: %s\n' "$code" "$desc"
+    fi
+  else
+    if [ "$code" -eq 0 ]; then
+      pass=$((pass + 1))
+    else
+      fail=$((fail + 1))
+      printf 'FAIL [expected CLEAN, got exit %s]: %s\n  output: %s\n' "$code" "$desc" "$out"
+    fi
+  fi
+}
+
+run_comment_case FLAG  "Write, narrative role comment"           Write "src/pool.py"      "# This class is responsible for managing the connection pool"
+run_comment_case FLAG  "Edit, session-narration comment"          Edit  "src/foo.go"       "// this fixes the race from the earlier refactor"
+run_comment_case FLAG  "Edit, wrapper-around phrasing"            Edit  "scripts/deploy.ps1" "# thin wrapper around the deploy API"
+run_comment_case FLAG  "Write, used-by-the-flow phrasing"         Write "src/util.ts"      "// used by the checkout flow"
+run_comment_case FLAG  "Edit, helper-function-to phrasing"        Edit  "lib/helpers.rb"   "# helper function to format currency"
+run_comment_case CLEAN "Write, plain code, no narrative phrase"   Write "src/add.go"       "func Add(a, b int) int { return a + b }"
+run_comment_case CLEAN "Edit, genuine non-obvious why"            Edit  "src/retry.py"     "# retry once: upstream API is flaky under load per INC-4021"
+run_comment_case CLEAN "Write, narrative phrase but non-source ext (md)" Write "README.md" "this class is responsible for things"
+
+# Wrong tool (Read) must never be flagged even with narrative phrasing present.
+payload='{"tool_name":"Read","tool_input":{"file_path":"src/pool.py","content":"responsible for pooling"}}'
+out="$(printf '%s' "$payload" | sh "$HOOK2" 2>&1)"
+record_result ALLOW "flag-comments: Read tool is never flagged" "Read src/pool.py" "$?" "$out"
+
 echo
 echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]

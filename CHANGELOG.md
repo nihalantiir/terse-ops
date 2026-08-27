@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 - 2026-08-27
+
+- Added `code-comments`: a new always-on skill (no `disable-model-invocation`) closing a real gap found using the plugin on a real project — none of the existing skills governed what gets written *inside* files, and the system prompt's own "no comments unless non-obvious why" default lost out to task context often enough that a real session opened its first pass with narrative class blurbs ("Owns the X... every other Y is built on top of this...") until told explicitly to stop. `code-comments` states the rule set directly: no restating what code does, no class/function-role narration, no referencing this task/session in a comment, keep only genuinely non-obvious why.
+- Backed it with a mechanical nudge, not just prose: a new `PostToolUse` hook (`flag-comments.sh`/`.ps1`) fires on any `Edit`/`Write` to a recognized source file, heuristically scanning for narrative phrasing ("responsible for", "wrapper around", "used by the", "this fixes", etc.) and surfacing a reread prompt back to the model on a hit. Unlike `block-dangerous`, this hook never blocks — the write already happened by the time `PostToolUse` fires — so false positives are cheap and the model still makes the call.
+- Preloaded `code-comments` onto `builder`'s skill list — the one agent among the five that actually writes files.
+- Extended both `tests/run-tests.sh`/`.ps1` with 9 new cases covering the new hook (46 → 55), reusing the existing pass/fail counters and CI parity check with no workflow changes needed.
+
 ## 1.1.0 - 2026-08-26
 
 - Tagged as `terse-ops--v1.0.0`.

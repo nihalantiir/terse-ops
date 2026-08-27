@@ -24,6 +24,7 @@ Core — auto-triggered, based on the skill's description matching the task, and
 | `fail-fast` | Report broken state in a fixed shape, once. No retry loops, no open-ended research to route around a failure. |
 | `economy` | Keep tool-call and delegation overhead proportional to the task — no subagent spawns, plans, or re-reads a task doesn't need. |
 | `compose` | How terse-ops behaves alongside domain-specific plugins/skills — it owns voice/routing/safety/spend, never the domain work; safety rules win on any real conflict. |
+| `code-comments` | Comments carry only non-obvious why — never restate what the code does, narrate a class/function's role, or reference this session's changes. Backed by a `PostToolUse` nudge (see Hooks below). |
 
 On-demand — not auto-triggered (excluded from the ambient skill listing entirely, cutting per-turn description overhead); invoke explicitly with `/terse-ops:<name>` when you want the behavior active for the rest of the session:
 
@@ -90,9 +91,11 @@ Two ways to override: a one-shot `TERSE_OPS_DANGER_OK=1`/`TERSE_OPS_COMMIT_OK=1`
 
 Full mechanics — the per-segment scoping, the false-positive fixes, the standing-allow's file format and its session-root scoping gap: [wiki: Hooks and Safety](https://github.com/nihalantiir/terse-ops/wiki/Hooks-and-Safety).
 
+A second, non-blocking `PostToolUse` hook (`flag-comments.sh`/`.ps1`) backs `code-comments`: on any `Edit`/`Write` to a recognized source file, it scans the payload for narrative phrasing ("responsible for", "wrapper around", "used by the", "this fixes", etc.) and, on a hit, surfaces a reread nudge back to the model — it never blocks, since the write already happened by the time `PostToolUse` fires. Heuristic and cheap to false-positive on purpose; the model still makes the call.
+
 ## Tests and evals
 
-`tests/` has a plain shell/PowerShell test suite (46 cases as of this writing) that asserts `block-dangerous.sh`/`.ps1`'s exit code (allow/block), including the known false-positive traps from past bugs and the full standing-allow grant/scope/revoke lifecycle. No gating, no API cost, runs in CI on every push (`.github/workflows/hook-tests.yml`'s `sh`/`powershell` jobs), plus a `validate` job (`claude plugin validate`) and a `parity` job asserting both suites report the same total.
+`tests/` has a plain shell/PowerShell test suite (55 cases as of this writing) that asserts `block-dangerous.sh`/`.ps1`'s exit code (allow/block) and `flag-comments.sh`/`.ps1`'s exit code (nudge/clean), including the known false-positive traps from past bugs and the full standing-allow grant/scope/revoke lifecycle. No gating, no API cost, runs in CI on every push (`.github/workflows/hook-tests.yml`'s `sh`/`powershell` jobs), plus a `validate` job (`claude plugin validate`) and a `parity` job asserting both suites report the same total.
 
 `evals/` has `claude plugin eval` cases covering the same hook blocks plus the `output` skill's brevity rule, but at the agent-behavior level (does the agent correctly report a block instead of retrying or claiming success). That feature is early access and gated per org, see `evals/README.md` for status.
 

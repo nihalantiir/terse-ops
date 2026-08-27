@@ -151,6 +151,43 @@ Record-Result BLOCK "standing allow: revoke restores the block" 'git commit -m "
 Pop-Location
 Remove-Item -Recurse -Force $tmp
 
+# --- flag-comments.ps1: PostToolUse nudge on Edit/Write, never blocks the
+# tool itself (already ran by PostToolUse time) -- FLAG means exit 2
+# (nudge surfaced), CLEAN means exit 0 (no nudge). ---
+$Hook2 = Join-Path $PSScriptRoot "..\hooks\flag-comments.ps1"
+
+function Invoke-CommentCase {
+    param([string]$Expect, [string]$Desc, [string]$ToolName, [string]$FilePath, [string]$Text)
+    $field = if ($ToolName -eq 'Edit') { 'new_string' } else { 'content' }
+    $toolInput = @{ file_path = $FilePath }
+    $toolInput[$field] = $Text
+    $payload = (@{ tool_name = $ToolName; tool_input = $toolInput } | ConvertTo-Json -Compress)
+    $out = $payload | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Hook2 2>&1
+    $code = $LASTEXITCODE
+    $ok = if ($Expect -eq 'FLAG') { $code -eq 2 } else { $code -eq 0 }
+    if ($ok) {
+        $script:pass++
+    } else {
+        $script:fail++
+        Write-Host "FAIL [expected $Expect, got exit $code]: $Desc"
+        if ($Expect -eq 'CLEAN') { Write-Host "  output: $($out -join "``n")" }
+    }
+}
+
+Invoke-CommentCase FLAG  "Write, narrative role comment"         Write "src/pool.py"        "# This class is responsible for managing the connection pool"
+Invoke-CommentCase FLAG  "Edit, session-narration comment"       Edit  "src/foo.go"          "// this fixes the race from the earlier refactor"
+Invoke-CommentCase FLAG  "Edit, wrapper-around phrasing"         Edit  "scripts/deploy.ps1"  "# thin wrapper around the deploy API"
+Invoke-CommentCase FLAG  "Write, used-by-the-flow phrasing"      Write "src/util.ts"         "// used by the checkout flow"
+Invoke-CommentCase FLAG  "Edit, helper-function-to phrasing"     Edit  "lib/helpers.rb"      "# helper function to format currency"
+Invoke-CommentCase CLEAN "Write, plain code, no narrative phrase" Write "src/add.go"         "func Add(a, b int) int { return a + b }"
+Invoke-CommentCase CLEAN "Edit, genuine non-obvious why"         Edit  "src/retry.py"        "# retry once: upstream API is flaky under load per INC-4021"
+Invoke-CommentCase CLEAN "Write, narrative phrase but non-source ext (md)" Write "README.md" "this class is responsible for things"
+
+# Wrong tool (Read) must never be flagged even with narrative phrasing present.
+$payload = (@{ tool_name = 'Read'; tool_input = @{ file_path = 'src/pool.py'; content = 'responsible for pooling' } } | ConvertTo-Json -Compress)
+$out = $payload | & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Hook2 2>&1
+Record-Result ALLOW "flag-comments: Read tool is never flagged" "Read src/pool.py" $LASTEXITCODE ($out -join "`n")
+
 Write-Host ""
 Write-Host "$pass passed, $fail failed"
 if ($fail -gt 0) { exit 1 } else { exit 0 }
