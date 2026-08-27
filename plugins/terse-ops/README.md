@@ -72,7 +72,7 @@ None of these make the final scope or architecture call — `architect` recommen
 
 ## Hooks
 
-A `PreToolUse` hook backs the hard rules in `harness` with an actual block, not just prompt text. Denied at the tool-call level once this plugin is installed:
+A `PreToolUse` hook backs the hard rules in `harness` with an actual block, not just prompt text — registered for both the `Bash` and `PowerShell` tools, since on Windows the model can reach for either one and the block list needs to cover both, not just Bash. Denied at the tool-call level once this plugin is installed:
 
 | Command pattern | Overridable? |
 |---|---|
@@ -81,7 +81,7 @@ A `PreToolUse` hook backs the hard rules in `harness` with an actual block, not 
 | `git reset --hard` | Yes |
 | `git branch -D` | Yes |
 | `git clean -f` (any combo incl. `-f`, e.g. `-fd`) | Yes |
-| `rm -rf` (any flag ordering/combination) | Yes |
+| `rm -rf` (any flag ordering/combination), or PowerShell's own `Remove-Item`/`ri`/`rd`/`rmdir`/`del`/`erase` with `-Recurse` and `-Force` | Yes |
 | `terraform destroy` | Yes |
 | `kubectl delete` (a plain pod delete is always allowed, `--all-namespaces` still blocks) | Yes |
 | a raw `DROP TABLE` | Yes |
@@ -98,7 +98,7 @@ A second, non-blocking `PostToolUse` hook (`flag-comments.sh`/`.ps1`) backs `cod
 
 ## Tests and evals
 
-`tests/` has a plain shell/PowerShell test suite (66 cases as of this writing) that asserts `block-dangerous.sh`/`.ps1`'s exit code (allow/block) and `flag-comments.sh`/`.ps1`'s exit code (nudge/clean), including the known false-positive traps from past bugs, the AI-attribution trailer's absolute no-override block (including inside a `git commit -F`/`--file=` message file, not just `-m`), and the full standing-allow grant/scope/revoke lifecycle. No gating, no API cost, runs in CI on every push (`.github/workflows/hook-tests.yml`'s `sh`/`powershell` jobs), plus a `validate` job (`claude plugin validate`) and a `parity` job asserting both suites report the same total.
+`tests/` has a plain shell/PowerShell test suite (71 cases as of this writing) that asserts `block-dangerous.sh`/`.ps1`'s exit code (allow/block) and `flag-comments.sh`/`.ps1`'s exit code (nudge/clean), including the known false-positive traps from past bugs, the AI-attribution trailer's absolute no-override block (including inside a `git commit -F`/`--file=` message file, not just `-m`), PowerShell's own `Remove-Item`-style recursive-force delete, and the full standing-allow grant/scope/revoke lifecycle. No gating, no API cost, runs in CI on every push (`.github/workflows/hook-tests.yml`'s `sh`/`powershell` jobs), plus a `validate` job (`claude plugin validate`) and a `parity` job asserting both suites report the same total.
 
 `evals/` has `claude plugin eval` cases covering the same hook blocks plus the `output` skill's brevity rule, but at the agent-behavior level (does the agent correctly report a block instead of retrying or claiming success). That feature is early access and gated per org, see `evals/README.md` for status.
 

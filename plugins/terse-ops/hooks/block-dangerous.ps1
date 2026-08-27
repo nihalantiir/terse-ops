@@ -225,6 +225,26 @@ function Check-Segment($seg) {
             Deny-Overridable "terse-ops harness: rm -rf is blocked. Delete narrowly and explicitly, or ask the user before a recursive force-delete -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg 'rm-rf'
         }
     }
+
+    # Same intent as rm -rf above, PowerShell's own syntax: Remove-Item (or
+    # its built-in aliases ri/rd/rmdir/del/erase) combined with -Recurse and
+    # -Force. This hook is registered for the PowerShell tool too, not just
+    # Bash (see hooks.json) -- a token-equality pass, not a substring
+    # check, so the command name matches whether it's the first token or
+    # not. -eq/-match are case-insensitive by default in PowerShell,
+    # matching how the rest of this script already relies on that. Same
+    # rm-rf category, so the same override marker/standing allow covers it.
+    $isPsDelete = $false
+    $hasR = $false
+    $hasF = $false
+    foreach ($tok in ($seg -split '\s+')) {
+        if ($tok -in @('remove-item', 'ri', 'rd', 'rmdir', 'del', 'erase')) { $isPsDelete = $true }
+        if ($tok -in @('-recurse', '-r')) { $hasR = $true }
+        if ($tok -in @('-force', '-f')) { $hasF = $true }
+    }
+    if ($isPsDelete -and $hasR -and $hasF) {
+        Deny-Overridable "terse-ops harness: a recursive, forced PowerShell delete (Remove-Item/ri/rd/rmdir/del/erase with -Recurse and -Force) is blocked. Same rule as rm -rf, different syntax -- delete narrowly and explicitly, or ask the user first -- or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." $seg 'rm-rf'
+    }
 }
 
 # Every check runs per-segment, not against the whole raw command line.

@@ -277,6 +277,36 @@ check_segment() {
       fi
       ;;
   esac
+
+  # Same intent as rm -rf above, PowerShell's own syntax: Remove-Item (or
+  # its built-in aliases ri/rd/rmdir/del/erase) combined with -Recurse and
+  # -Force. This hook is registered for the PowerShell tool too, not just
+  # Bash (see hooks.json) -- on Windows the model can reach for either
+  # tool, and only matching bash-flavored `rm -rf` text left this
+  # completely unguarded for a PowerShell-native delete. A single
+  # token-equality pass, not a substring/space-boundary check, so the
+  # command name matches whether it's the first token or not, same
+  # reasoning as the plain `rm) continue` token check above. PowerShell
+  # cmdlet/parameter names are case-insensitive, so this scans lc_seg
+  # (computed at the top of this function), not the original $seg. Same
+  # rm-rf category, so the same override marker/standing allow covers it.
+  is_ps_delete=0
+  has_r=0
+  has_f=0
+  for tok in $lc_seg; do
+    case "$tok" in
+      remove-item|ri|rd|rmdir|del|erase) is_ps_delete=1 ;;
+    esac
+    case "$tok" in
+      -recurse|-r) has_r=1 ;;
+    esac
+    case "$tok" in
+      -force|-f) has_f=1 ;;
+    esac
+  done
+  if [ "$is_ps_delete" = 1 ] && [ "$has_r" = 1 ] && [ "$has_f" = 1 ]; then
+    overridable_deny "terse-ops harness: a recursive, forced PowerShell delete (Remove-Item/ri/rd/rmdir/del/erase with -Recurse and -Force) is blocked. Same rule as rm -rf, different syntax — delete narrowly and explicitly, or ask the user first — or, if just explicitly asked this turn, prefix with TERSE_OPS_DANGER_OK=1 (see harness)." rm-rf
+  fi
 }
 
 # Split into segments using a temporary IFS, then restore it immediately --

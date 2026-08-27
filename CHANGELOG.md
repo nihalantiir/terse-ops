@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0 - 2026-08-27
+
+- Fixed a real, previously-unknown gap found by actually installing the plugin fresh and dogfooding it: `hooks.json`'s `PreToolUse` matcher was `Bash` only, so a model reaching for the separate `PowerShell` tool on Windows bypassed every rule on the block list entirely. In the dogfood session, asked to delete a file, the model used `Remove-Item`, not `rm -rf`, and nothing stopped it.
+- Matcher changed to `Bash|PowerShell`. Since almost everything on the block list is an external tool (`git`, `terraform`, `kubectl`, `psql`) with identical syntax regardless of which shell invokes it, that alone closed most of the gap for free. `rm -rf` is the one shell-native exception, so `block-dangerous.sh`/`.ps1` gained a matching PowerShell-syntax check: `Remove-Item`/`ri`/`rd`/`rmdir`/`del`/`erase` combined with `-Recurse` and `-Force`, same `rm-rf` category, same override marker/standing allow. 5 new test cases (71 total): the PowerShell delete blocked, a plain delete without `-Recurse` left alone, `Copy-Item -Recurse -Force` not misread as a delete, and the marker overriding it.
+- `flag-comments`'s own matcher stays `Edit`/`Write` only for now (a file written via `Set-Content`/`Out-File` through the `PowerShell` tool still isn't nudged) — documented as an accepted, lower-stakes residual gap in the wiki, since it's a soft nudge rather than a safety block.
+- The dogfood pass itself surfaced a second thing worth recording: cleaning up its throwaway test-project's marketplace registration also deleted a real, pre-existing **user-scope** terse-ops install (stuck at a stale `0.8.0`) — marketplaces are user-level, not project-scoped, so removing one removes it everywhere. Restored, now current instead of stale, but worth writing down: don't assume a marketplace/plugin removal is scoped to the throwaway project you added it in.
+
 ## 1.6.0 - 2026-08-27
 
 - Root README: dropped the `---` separator between the `# terse-ops` headline and the banner — the H1 already separates, a rule under a title is extra chrome. Lean layout now: headline, banner, badges, one-paragraph pitch.
